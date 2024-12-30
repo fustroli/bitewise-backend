@@ -5,6 +5,7 @@ import { AuthService } from './services';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { Module } from '@nestjs/common';
+import { SessionSerializer } from './serializers';
 import { TokenService } from '../token/services';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/modules/user/entities';
@@ -27,6 +28,7 @@ import googleOauthConfig from './config/google-oauth.config';
     TokenService,
     GoogleStrategy,
     FacebookStrategy,
+    SessionSerializer,
   ],
   exports: [AuthService],
 })

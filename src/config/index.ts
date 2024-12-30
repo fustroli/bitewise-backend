@@ -5,6 +5,7 @@ export const config: IConfig = {
   FRONTEND_URL: process.env.FRONTEND_URL,
   SALT_WORK_FACTOR: +process.env.SALT_WORK_FACTOR,
   NODE_ENV: process.env.NODE_ENV,
+  SESSION_SECRET: process.env.SESSION_SECRET,
   THROTTLER: {
     LIMIT: +process.env.THROTTLER_LIMIT,
     TTL: +process.env.THROTTLER_TTL,
@@ -43,6 +44,7 @@ export interface IConfig {
   FRONTEND_URL: string;
   SALT_WORK_FACTOR: number;
   NODE_ENV: string;
+  SESSION_SECRET: string;
   THROTTLER: {
     LIMIT: number;
     TTL: number;

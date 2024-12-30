@@ -1,15 +1,18 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './modules/auth/auth.module';
-import { UserModule } from './modules/user/user.module';
-import databaseConfig from './app.development.config';
+import { ConfigModule } from '@nestjs/config';
 import { IngredientModule } from './modules/ingredient/ingredient.module';
 import { MealModule } from './modules/meal/meal.module';
-import { config } from './config';
 import { MealPlanModule } from './modules/meal-plan/meal-plan.module';
+import { Module } from '@nestjs/common';
+import { PassportModule } from '@nestjs/passport';
+import { RedisModule } from 'src/modules/redis/redis.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserModule } from './modules/user/user.module';
+import { config } from './config';
+import databaseConfig from './app.development.config';
 
 @Module({
   imports: [
@@ -26,6 +29,8 @@ import { MealPlanModule } from './modules/meal-plan/meal-plan.module';
     IngredientModule,
     MealModule,
     MealPlanModule,
+    PassportModule.register({ session: true }),
+    RedisModule,
   ],
   controllers: [],
   providers: [
