@@ -10,6 +10,7 @@ import { IngredientModule } from './modules/ingredient/ingredient.module';
 import { MealModule } from './modules/meal/meal.module';
 import { config } from './config';
 import { MealPlanModule } from './modules/meal-plan/meal-plan.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { MealPlanModule } from './modules/meal-plan/meal-plan.module';
     IngredientModule,
     MealModule,
     MealPlanModule,
+    HealthModule,
   ],
   controllers: [],
   providers: [
