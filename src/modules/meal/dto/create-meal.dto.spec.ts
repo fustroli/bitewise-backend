@@ -1,6 +1,6 @@
 import { validate } from 'class-validator';
-import { stubMeal } from '../entities';
-import { CreateMealDto } from './create-meal.dto';
+import { stubMeal } from '../entities/index.js';
+import { CreateMealDto } from './create-meal.dto.js';
 import { plainToInstance } from 'class-transformer';
 
 describe('CreateMealDto', () => {

@@ -1,5 +1,5 @@
 import { registerAs } from '@nestjs/config';
-import { config } from 'src/config';
+import { config } from '../../../config/index.js';
 
 export default registerAs('facebookOAuth', () => ({
   clientId: config.FACEBOOK.FACEBOOK_CLIENT_ID,

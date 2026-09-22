@@ -7,14 +7,15 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  Relation,
   RelationId,
   UpdateDateColumn,
 } from 'typeorm';
 
-import { EUnit } from '../enum';
-import { MealIngredient } from '../../meal/entities';
-import { User } from '../../user/entities';
-import { decimalTransformer } from '../../../common/transformers';
+import { EUnit } from '../enum/index.js';
+import { MealIngredient } from '../../meal/entities/index.js';
+import { User } from '../../user/entities/index.js';
+import { decimalTransformer } from '../../../common/transformers/index.js';
 
 @Entity()
 export class Ingredient {
@@ -95,11 +96,11 @@ export class Ingredient {
     () => MealIngredient,
     (mealIngredient) => mealIngredient.ingredient,
   )
-  mealIngredients: MealIngredient[];
+  mealIngredients: Relation<MealIngredient>[];
 
   @ManyToOne(() => User, (user) => user.ingredients)
   @JoinColumn()
-  user: User;
+  user: Relation<User>;
 
   @RelationId((ingredient: Ingredient) => ingredient.user)
   userId: number;

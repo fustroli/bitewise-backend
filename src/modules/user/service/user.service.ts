@@ -6,12 +6,12 @@ import {
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User } from '../entities';
-import { CreateSocialUserDto, UpdateUserDto } from '../dto';
-import { PersonalInformationService } from './personal-information.service';
-import { SocialProfilesService } from './social-profiles.service';
-import { NotificationSettingsService } from './notifications.service';
-import { StorageService } from '../../storage/storage.service';
+import { User } from '../entities/index.js';
+import { CreateSocialUserDto, UpdateUserDto } from '../dto/index.js';
+import { PersonalInformationService } from './personal-information.service.js';
+import { SocialProfilesService } from './social-profiles.service.js';
+import { NotificationSettingsService } from './notifications.service.js';
+import { StorageService } from '../../storage/storage.service.js';
 
 @Injectable()
 export class UserService {

@@ -7,16 +7,17 @@ import {
   OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
+  Relation,
   UpdateDateColumn,
 } from 'typeorm';
 
 import { Exclude } from 'class-transformer';
-import { Ingredient } from '../../ingredient/entities';
+import { Ingredient } from '../../ingredient/entities/index.js';
 import { IsEmail } from 'class-validator';
-import { Meal } from '../../meal/entities';
-import { NotificationSettings } from './notifications.entity';
-import { PersonalInformation } from './personal-information.entity';
-import { SocialProfiles } from './social-profiles.entity';
+import { Meal } from '../../meal/entities/index.js';
+import { NotificationSettings } from './notifications.entity.js';
+import { PersonalInformation } from './personal-information.entity.js';
+import { SocialProfiles } from './social-profiles.entity.js';
 
 @Entity()
 export class User {
@@ -28,10 +29,10 @@ export class User {
   email: string;
 
   @OneToMany(() => Ingredient, (ingredient) => ingredient.user)
-  ingredients: Ingredient[];
+  ingredients: Relation<Ingredient>[];
 
   @OneToMany(() => Meal, (meal) => meal.user)
-  meals: Meal[];
+  meals: Relation<Meal>[];
 
   @Exclude()
   @Column({ default: null })
@@ -39,15 +40,15 @@ export class User {
 
   @OneToOne(() => PersonalInformation, { cascade: false, eager: true })
   @JoinColumn()
-  personalInformation: PersonalInformation;
+  personalInformation: Relation<PersonalInformation>;
 
   @OneToOne(() => SocialProfiles, { cascade: false, eager: true })
   @JoinColumn()
-  socialProfiles: SocialProfiles;
+  socialProfiles: Relation<SocialProfiles>;
 
   @OneToOne(() => NotificationSettings, { cascade: false, eager: true })
   @JoinColumn()
-  notificationSettings: NotificationSettings;
+  notificationSettings: Relation<NotificationSettings>;
 
   @Exclude()
   @Column({ nullable: true })

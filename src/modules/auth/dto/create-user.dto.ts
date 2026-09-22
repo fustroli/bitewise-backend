@@ -6,8 +6,8 @@ import {
 } from 'class-validator';
 
 import { ApiProperty } from '@nestjs/swagger';
-import { Match } from '../decorators';
-import { PASSWORD_MIN_LENGTH } from 'src/modules/auth/constants';
+import { Match } from '../decorators/index.js';
+import { PASSWORD_MIN_LENGTH } from '../constants/index.js';
 import { Transform } from 'class-transformer';
 
 export class CreateUserDto {

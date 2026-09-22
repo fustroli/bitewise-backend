@@ -1,6 +1,6 @@
 import { IsInt, Min, IsOptional, IsString, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
-import { EOrderDirection } from './enums';
+import { EOrderDirection } from './enums/index.js';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class PaginationDto {

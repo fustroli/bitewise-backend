@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MealResponseDto } from 'src/modules/meal/dto/response-meal.dto';
+import { MealResponseDto } from './response-meal.dto.js';
 
 export class PaginatedMealResponseDto {
   @ApiProperty({ type: [MealResponseDto] })

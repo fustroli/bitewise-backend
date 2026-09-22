@@ -1,1 +1,1 @@
-export * from './meal-plan-relations.constant';
+export * from './meal-plan-relations.constant.js';

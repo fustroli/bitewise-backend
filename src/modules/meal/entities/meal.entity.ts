@@ -7,13 +7,14 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  Relation,
   RelationId,
   UpdateDateColumn,
 } from 'typeorm';
 
-import { MealIngredient } from '../../meal/entities/meal-ingredient.entity';
-import { MealPlanMeal } from '../../meal-plan/entities';
-import { User } from '../../user/entities';
+import { MealIngredient } from '../../meal/entities/meal-ingredient.entity.js';
+import { MealPlanMeal } from '../../meal-plan/entities/index.js';
+import { User } from '../../user/entities/index.js';
 
 @Entity()
 export class Meal {
@@ -26,14 +27,14 @@ export class Meal {
   @OneToMany(() => MealIngredient, (mealIngredient) => mealIngredient.meal, {
     cascade: true,
   })
-  mealIngredients: MealIngredient[];
+  mealIngredients: Relation<MealIngredient>[];
 
   @OneToMany(() => MealPlanMeal, (mealPlanMeal) => mealPlanMeal.meal)
-  mealPlanMeals: MealPlanMeal[];
+  mealPlanMeals: Relation<MealPlanMeal>[];
 
   @ManyToOne(() => User, (user) => user.meals)
   @JoinColumn()
-  user: User;
+  user: Relation<User>;
 
   @RelationId((meal: Meal) => meal.user)
   userId: number;

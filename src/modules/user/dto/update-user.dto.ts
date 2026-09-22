@@ -1,10 +1,10 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { IsOptional, IsString, ValidateNested } from 'class-validator';
 
-import { CreateUserDto } from '../../auth/dto';
-import { NotificationSettingsDto } from './notifications.dto';
-import { PersonalInformationDto } from './personal-information.dto';
-import { SocialProfilesDto } from './social-profiles.dto';
+import { CreateUserDto } from '../../auth/dto/index.js';
+import { NotificationSettingsDto } from './notifications.dto.js';
+import { PersonalInformationDto } from './personal-information.dto.js';
+import { SocialProfilesDto } from './social-profiles.dto.js';
 import { Type } from 'class-transformer';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {

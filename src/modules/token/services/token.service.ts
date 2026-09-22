@@ -4,11 +4,12 @@ import { CookieOptions, Response } from 'express';
 import { HttpStatus, Injectable } from '@nestjs/common';
 
 import { ConfigService } from '@nestjs/config';
-import { EExpirationStrategy } from '../../token/enum';
+import { EExpirationStrategy } from '../../token/enum/index.js';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '../../user/entities';
-import { UserService } from '../../user/service';
-import { config } from '../../../config';
+import type { StringValue } from 'ms';
+import { User } from '../../user/entities/index.js';
+import { UserService } from '../../user/service/index.js';
+import { config } from '../../../config/index.js';
 import parse from 'parse-duration';
 import { plainToInstance } from 'class-transformer';
 
@@ -34,11 +35,11 @@ export class TokenService {
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
-        expiresIn: this.accessTokenExpiration,
+        expiresIn: this.accessTokenExpiration as StringValue,
         secret: this.config.get('ACCESS_TOKEN_SECRET'),
       }),
       this.jwtService.signAsync(payload, {
-        expiresIn: this.refreshTokenExpiration,
+        expiresIn: this.refreshTokenExpiration as StringValue,
         secret: this.config.get('REFRESH_TOKEN_SECRET'),
       }),
     ]);

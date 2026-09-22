@@ -1,1 +1,1 @@
-export * from './meal.serializer';
+export * from './meal.serializer.js';

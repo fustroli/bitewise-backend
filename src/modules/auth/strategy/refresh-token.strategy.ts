@@ -2,7 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { ICurrentUser } from '../interfaces';
+import { ICurrentUser } from '../interfaces/index.js';
 
 export class RefreshTokenStrategy extends PassportStrategy(
   Strategy,

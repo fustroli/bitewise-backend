@@ -1,6 +1,12 @@
-import { Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { Meal } from '../../meal/entities';
-import { MealPlan } from '../../meal-plan/entities';
+import {
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  Relation,
+} from 'typeorm';
+import { Meal } from '../../meal/entities/index.js';
+import { MealPlan } from '../../meal-plan/entities/index.js';
 
 @Entity()
 export class MealPlanMeal {
@@ -11,9 +17,9 @@ export class MealPlanMeal {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'mealPlanId' })
-  mealPlan: MealPlan;
+  mealPlan: Relation<MealPlan>;
 
   @ManyToOne(() => Meal, (meal) => meal.mealPlanMeals)
   @JoinColumn({ name: 'mealId' })
-  meal: Meal;
+  meal: Relation<Meal>;
 }

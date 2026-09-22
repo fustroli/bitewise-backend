@@ -1,4 +1,4 @@
-import { LoginUserDto } from './index';
+import { LoginUserDto } from './index.js';
 
 export const stubLoginUserDto = (): LoginUserDto => {
   return {

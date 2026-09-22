@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common';
 import { Observable, map } from 'rxjs';
 
-import { User } from '../entities';
-import { UserResponseDto } from '../dto';
+import { User } from '../entities/index.js';
+import { UserResponseDto } from '../dto/index.js';
 import { plainToInstance } from 'class-transformer';
 
 @Injectable()

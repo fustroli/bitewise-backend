@@ -1,6 +1,6 @@
 import { validate } from 'class-validator';
-import { stubMealPlan } from '../entities';
-import { CreateMealPlanDto } from './create-meal-plan.dto';
+import { stubMealPlan } from '../entities/index.js';
+import { CreateMealPlanDto } from './create-meal-plan.dto.js';
 
 describe('CreateMealPlanDto', () => {
   let dto: CreateMealPlanDto;

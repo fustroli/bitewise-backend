@@ -8,9 +8,9 @@ import {
   Length,
   ValidateNested,
 } from 'class-validator';
-import { MAX_LENGTH, MIN_LENGTH } from '../../../utils/constants';
+import { MAX_LENGTH, MIN_LENGTH } from '../../../utils/constants.js';
 import { Type } from 'class-transformer';
-import { IngredientQuantityDto } from './ingredient-quantity.dto';
+import { IngredientQuantityDto } from './ingredient-quantity.dto.js';
 
 export class CreateMealDto {
   @IsString()

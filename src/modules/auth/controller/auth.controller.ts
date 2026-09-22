@@ -9,14 +9,22 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { CreateUserDto, LoginUserDto, ChangePasswordDto } from '../dto';
+import {
+  CreateUserDto,
+  LoginUserDto,
+  ChangePasswordDto,
+} from '../dto/index.js';
 import { ApiTags } from '@nestjs/swagger';
-import { AuthService } from '../services';
+import { AuthService } from '../services/index.js';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { Response } from 'express';
-import { FacebookAuthGuard, GoogleAuthGuard, RefreshJwtGuard } from '../guard';
-import { config } from 'src/config';
-import { CurrentUser } from '../decorators';
+import {
+  FacebookAuthGuard,
+  GoogleAuthGuard,
+  RefreshJwtGuard,
+} from '../guard/index.js';
+import { config } from '../../../config/index.js';
+import { CurrentUser } from '../decorators/index.js';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('auth')

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MealResponseDto } from '../../meal/dto';
+import { MealResponseDto } from '../../meal/dto/index.js';
 
 export class MealPlanResponseDto {
   @ApiProperty({

@@ -1,1 +1,1 @@
-export * from './decimal.transformer';
+export * from './decimal.transformer.js';

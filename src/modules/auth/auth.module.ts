@@ -1,20 +1,26 @@
-import { FacebookStrategy, GoogleStrategy, JwtStrategy } from './strategy';
+import {
+  FacebookStrategy,
+  GoogleStrategy,
+  JwtStrategy,
+} from './strategy/index.js';
 
-import { AuthController } from './controller/auth.controller';
-import { AuthService } from './services';
+import { AuthController } from './controller/auth.controller.js';
+import { AuthService } from './services/index.js';
 import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { Module } from '@nestjs/common';
-import { TokenService } from '../token/services';
+import { PassportModule } from '@nestjs/passport';
+import { TokenService } from '../token/services/index.js';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from 'src/modules/user/entities';
-import { UserModule } from '../user/user.module';
-import facebookOauthConfig from './config/facebook-oauth.config';
-import googleOauthConfig from './config/google-oauth.config';
+import { User } from '../user/entities/index.js';
+import { UserModule } from '../user/user.module.js';
+import facebookOauthConfig from './config/facebook-oauth.config.js';
+import googleOauthConfig from './config/google-oauth.config.js';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),
+    PassportModule.register({}),
     JwtModule.register({}),
     ConfigModule.forFeature(googleOauthConfig),
     ConfigModule.forFeature(facebookOauthConfig),

@@ -1,4 +1,4 @@
-import { User } from './user.entity';
+import { User } from './user.entity.js';
 
 export function stubUser(override: Partial<User> = {}): User {
   return {

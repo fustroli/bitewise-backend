@@ -1,5 +1,5 @@
 import { registerAs } from '@nestjs/config';
-import { config } from 'src/config';
+import { config } from '../../../config/index.js';
 
 export default registerAs('googleOAuth', () => ({
   clientId: config.GOOGLE.GOOGLE_CLIENT_ID,

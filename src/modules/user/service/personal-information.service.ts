@@ -5,8 +5,8 @@ import {
 } from '@nestjs/common';
 import { Not, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PersonalInformation } from '../entities';
-import { PersonalInformationDto } from '../dto';
+import { PersonalInformation } from '../entities/index.js';
+import { PersonalInformationDto } from '../dto/index.js';
 
 @Injectable()
 export class PersonalInformationService {

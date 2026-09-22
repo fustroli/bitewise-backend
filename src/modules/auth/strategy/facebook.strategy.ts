@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, Profile } from 'passport-facebook';
-import { AuthService } from '../services';
+import { AuthService } from '../services/index.js';
 import { Inject } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import facebookOAuth from '../config/facebook-oauth.config';
+import facebookOAuth from '../config/facebook-oauth.config.js';
 import { VerifyCallback } from 'passport-google-oauth20';
 
 @Injectable()

@@ -7,9 +7,9 @@ import {
   Length,
   Min,
 } from 'class-validator';
-import { IsBiggerThanSaturatedFat } from '../decorator';
-import { MAX_LENGTH, MIN_LENGTH } from '../../../utils/constants';
-import { EUnit } from '../enum';
+import { IsBiggerThanSaturatedFat } from '../decorator/index.js';
+import { MAX_LENGTH, MIN_LENGTH } from '../../../utils/constants.js';
+import { EUnit } from '../enum/index.js';
 
 export class CreateIngredientDto {
   @IsString()

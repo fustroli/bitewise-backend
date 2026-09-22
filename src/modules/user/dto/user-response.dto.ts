@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { NotificationSettingsDto } from 'src/modules/user/dto/notifications.dto';
-import { PersonalInformationDto } from './personal-information.dto';
-import { SocialProfilesDto } from './social-profiles.dto';
+import { NotificationSettingsDto } from './notifications.dto.js';
+import { PersonalInformationDto } from './personal-information.dto.js';
+import { SocialProfilesDto } from './social-profiles.dto.js';
 
 export class UserResponseDto {
   @ApiProperty({ example: 1 })

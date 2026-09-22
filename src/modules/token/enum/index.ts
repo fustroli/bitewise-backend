@@ -1,1 +1,1 @@
-export * from './expiration-strategy.enum';
+export * from './expiration-strategy.enum.js';

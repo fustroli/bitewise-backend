@@ -1,6 +1,6 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { join } from 'path';
-import { config } from './config';
+import { config } from './config/index.js';
 
 const databaseConfig: TypeOrmModuleOptions = {
   type: 'mysql',
@@ -9,7 +9,7 @@ const databaseConfig: TypeOrmModuleOptions = {
   username: config.TYPEORM.USERNAME,
   password: config.TYPEORM.PASSWORD,
   database: config.TYPEORM.DATABASE_DEV,
-  entities: [join(__dirname, '**/**.entity{.ts,.js}')],
+  entities: [join(import.meta.dirname, '**/**.entity{.ts,.js}')],
   logging: false,
   synchronize: true,
 };

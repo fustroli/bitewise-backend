@@ -13,18 +13,18 @@ import {
 } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { JwtGuard } from '../../auth/guard';
+import { JwtGuard } from '../../auth/guard/index.js';
 import {
   CreateMealPlanDto,
   MealPlanResponseDto,
   PaginatedMealPlanResponseDto,
   UpdateMealPlanDto,
-} from '../dto';
-import { MealPlanService } from '../service';
-import { CurrentUser } from '../../auth/decorators';
-import { User } from '../../user/entities';
-import { serializeMealPlan } from '../serializers';
-import { PaginationDto } from '../../../common/pagination/pagination.dto';
+} from '../dto/index.js';
+import { MealPlanService } from '../service/index.js';
+import { CurrentUser } from '../../auth/decorators/index.js';
+import { User } from '../../user/entities/index.js';
+import { serializeMealPlan } from '../serializers/index.js';
+import { PaginationDto } from '../../../common/pagination/pagination.dto.js';
 
 @ApiTags('meal-plan')
 @UseGuards(JwtGuard, ThrottlerGuard)

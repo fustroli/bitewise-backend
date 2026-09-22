@@ -5,14 +5,18 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CreateMealDto, IngredientQuantityDto, UpdateMealDto } from '../dto';
-import { Meal, MealIngredient } from '../entities';
+import {
+  CreateMealDto,
+  IngredientQuantityDto,
+  UpdateMealDto,
+} from '../dto/index.js';
+import { Meal, MealIngredient } from '../entities/index.js';
 import { In, Repository } from 'typeorm';
-import { Ingredient } from '../../ingredient/entities';
-import { UserService } from '../../user/service';
-import { MEAL_RELATIONS } from '../constants';
-import { PaginationDto } from '../../../common/pagination/pagination.dto';
-import { createQueryObject } from '../../../common/pagination/helpers';
+import { Ingredient } from '../../ingredient/entities/index.js';
+import { UserService } from '../../user/service/index.js';
+import { MEAL_RELATIONS } from '../constants/index.js';
+import { PaginationDto } from '../../../common/pagination/pagination.dto.js';
+import { createQueryObject } from '../../../common/pagination/helpers/index.js';
 
 @Injectable()
 export class MealService {
@@ -166,7 +170,7 @@ export class MealService {
   async getCurrentMeal(id: number) {
     const currentMeal = await this.repository.findOne({
       where: { id },
-      relations: ['user', 'mealIngredients'],
+      relations: { user: true, mealIngredients: true },
     });
     if (!currentMeal) {
       throw new NotFoundException('No meal found with the provided id.');

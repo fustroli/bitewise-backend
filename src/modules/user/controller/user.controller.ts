@@ -12,14 +12,14 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { UserService } from '../service';
-import { JwtGuard } from '../../auth/guard';
-import { CurrentUser } from '../../auth/decorators';
-import { User } from '../entities';
+import { UserService } from '../service/index.js';
+import { JwtGuard } from '../../auth/guard/index.js';
+import { CurrentUser } from '../../auth/decorators/index.js';
+import { User } from '../entities/index.js';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { UpdateUserDto, UserResponseDto } from '../dto';
+import { UpdateUserDto, UserResponseDto } from '../dto/index.js';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { UserInterceptor } from '../interceptors';
+import { UserInterceptor } from '../interceptors/index.js';
 
 @ApiTags('users')
 @UseGuards(JwtGuard, ThrottlerGuard)

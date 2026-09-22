@@ -2,7 +2,7 @@ import * as crypto from 'crypto';
 
 import { Injectable } from '@nestjs/common';
 import { Storage } from '@google-cloud/storage';
-import { config } from '../../config';
+import { config } from '../../config/index.js';
 
 @Injectable()
 export class StorageService {

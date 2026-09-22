@@ -5,14 +5,18 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateUserDto, LoginUserDto, ChangePasswordDto } from '../dto';
-import { User } from '../../user/entities';
+import {
+  CreateUserDto,
+  LoginUserDto,
+  ChangePasswordDto,
+} from '../dto/index.js';
+import { User } from '../../user/entities/index.js';
 import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
-import { UserService } from '../../user/service';
-import { EExpirationStrategy } from '../../token/enum';
-import { TokenService } from '../../token/services';
-import { CreateSocialUserDto } from '../../user/dto';
+import { UserService } from '../../user/service/index.js';
+import { EExpirationStrategy } from '../../token/enum/index.js';
+import { TokenService } from '../../token/services/index.js';
+import { CreateSocialUserDto } from '../../user/dto/index.js';
 
 @Injectable()
 export class AuthService {

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { NotificationSettingsDto } from '../dto';
-import { NotificationSettings } from '../entities';
+import { NotificationSettingsDto } from '../dto/index.js';
+import { NotificationSettings } from '../entities/index.js';
 import { Repository } from 'typeorm';
 
 @Injectable()

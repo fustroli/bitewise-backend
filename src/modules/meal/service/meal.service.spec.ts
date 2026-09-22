@@ -1,15 +1,15 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
-import { CreateMealDto, UpdateMealDto } from '../dto';
-import { Ingredient, stubIngredient } from '../../ingredient/entities';
-import { Meal, MealIngredient, stubMeal } from '../entities';
+import { CreateMealDto, UpdateMealDto } from '../dto/index.js';
+import { Ingredient, stubIngredient } from '../../ingredient/entities/index.js';
+import { Meal, MealIngredient, stubMeal } from '../entities/index.js';
 
-import { MealService } from './index';
+import { MealService } from './index.js';
 import { Repository } from 'typeorm';
 import { Test } from '@nestjs/testing';
-import { User } from '../../user/entities';
-import { UserService } from '../../user/service';
+import { User } from '../../user/entities/index.js';
+import { UserService } from '../../user/service/index.js';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { serializeMeal } from '../serializers/meal.serializer';
+import { serializeMeal } from '../serializers/meal.serializer.js';
 
 const mealStub = stubMeal();
 const mealStubs = [mealStub];

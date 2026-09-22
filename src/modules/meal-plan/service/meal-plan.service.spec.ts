@@ -1,17 +1,17 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
-import { CreateMealPlanDto, UpdateMealPlanDto } from '../dto';
-import { Ingredient, stubIngredient } from '../../ingredient/entities';
-import { Meal, MealIngredient, stubMeal } from '../../meal/entities';
-import { MealPlan, stubMealPlan } from '../entities';
+import { CreateMealPlanDto, UpdateMealPlanDto } from '../dto/index.js';
+import { Ingredient, stubIngredient } from '../../ingredient/entities/index.js';
+import { Meal, MealIngredient, stubMeal } from '../../meal/entities/index.js';
+import { MealPlan, stubMealPlan } from '../entities/index.js';
 
-import { MealPlanService } from './index';
-import { MealService } from '../../meal/service';
+import { MealPlanService } from './index.js';
+import { MealService } from '../../meal/service/index.js';
 import { Repository } from 'typeorm';
 import { Test } from '@nestjs/testing';
-import { User } from '../../user/entities';
-import { UserService } from '../../user/service';
+import { User } from '../../user/entities/index.js';
+import { UserService } from '../../user/service/index.js';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { serializeMealPlan } from '../serializers/meal-plan.serializer';
+import { serializeMealPlan } from '../serializers/meal-plan.serializer.js';
 
 const mealPlanStub = stubMealPlan();
 const mealPlanStubs = [mealPlanStub];

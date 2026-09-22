@@ -1,1 +1,1 @@
-export * from './ingredient.service';
+export * from './ingredient.service.js';

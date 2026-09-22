@@ -1,5 +1,5 @@
-import { CreateUserDto } from './index';
-import { stubLoginUserDto } from './login-user.dto.stub';
+import { CreateUserDto } from './index.js';
+import { stubLoginUserDto } from './login-user.dto.stub.js';
 
 export const stubCreateUserDto = (): CreateUserDto => {
   return {

@@ -12,19 +12,19 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { JwtGuard } from '../../auth/guard';
+import { JwtGuard } from '../../auth/guard/index.js';
 import { ThrottlerGuard } from '@nestjs/throttler';
-import { IngredientService } from '../service';
+import { IngredientService } from '../service/index.js';
 import {
   CreateIngredientDto,
   IngredientResponseDto,
   UpdateIngredientDto,
   PaginatedIngredientDto,
-} from '../dto';
-import { CurrentUser } from '../../auth/decorators';
-import { User } from '../../user/entities';
+} from '../dto/index.js';
+import { CurrentUser } from '../../auth/decorators/index.js';
+import { User } from '../../user/entities/index.js';
 import { plainToClass } from 'class-transformer';
-import { PaginationDto } from '../../../common/pagination/pagination.dto';
+import { PaginationDto } from '../../../common/pagination/pagination.dto.js';
 
 @ApiTags('ingredient')
 @UseGuards(JwtGuard, ThrottlerGuard)

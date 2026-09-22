@@ -1,1 +1,1 @@
-export * from './meal-plan.service';
+export * from './meal-plan.service.js';

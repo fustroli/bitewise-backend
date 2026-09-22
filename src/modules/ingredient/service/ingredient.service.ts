@@ -9,12 +9,12 @@ import {
   CreateIngredientDto,
   PaginatedIngredientDto,
   UpdateIngredientDto,
-} from '../dto';
-import { Ingredient } from '../entities';
+} from '../dto/index.js';
+import { Ingredient } from '../entities/index.js';
 import { Repository } from 'typeorm';
-import { UserService } from '../../user/service';
-import { PaginationDto } from '../../../common/pagination/pagination.dto';
-import { createQueryObject } from '../../../common/pagination/helpers';
+import { UserService } from '../../user/service/index.js';
+import { PaginationDto } from '../../../common/pagination/pagination.dto.js';
+import { createQueryObject } from '../../../common/pagination/helpers/index.js';
 
 @Injectable()
 export class IngredientService {
@@ -111,7 +111,7 @@ export class IngredientService {
   async getCurrentIngredient(id: number) {
     const currentIngredient = await this.repository.findOne({
       where: { id },
-      relations: ['user'],
+      relations: { user: true },
     });
     if (!currentIngredient) {
       throw new NotFoundException('No ingredient found with the provided id.');

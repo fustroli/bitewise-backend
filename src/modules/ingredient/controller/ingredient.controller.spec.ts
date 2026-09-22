@@ -1,12 +1,12 @@
-import { Ingredient, stubIngredient } from '../entities';
+import { Ingredient, stubIngredient } from '../entities/index.js';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
-import { IngredientController } from './ingredient.controller';
-import { IngredientService } from '../service';
+import { IngredientController } from './ingredient.controller.js';
+import { IngredientService } from '../service/index.js';
 import { Repository } from 'typeorm';
 import { Test } from '@nestjs/testing';
-import { User } from '../../user/entities';
-import { UserService } from '../../user/service';
+import { User } from '../../user/entities/index.js';
+import { UserService } from '../../user/service/index.js';
 import { getRepositoryToken } from '@nestjs/typeorm';
 
 const ingredientResponseStub = stubIngredient();

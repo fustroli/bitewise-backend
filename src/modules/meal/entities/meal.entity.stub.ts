@@ -1,7 +1,7 @@
-import { Meal, MealIngredient } from '../entities';
+import { Meal, MealIngredient } from '../entities/index.js';
 
-import { stubIngredient } from '../../ingredient/entities';
-import { stubUser } from '../../user/entities';
+import { stubIngredient } from '../../ingredient/entities/index.js';
+import { stubUser } from '../../user/entities/index.js';
 
 export function stubMeal(): Meal {
   return {

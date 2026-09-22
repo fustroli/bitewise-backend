@@ -1,1 +1,1 @@
-export * from './meal.service';
+export * from './meal.service.js';

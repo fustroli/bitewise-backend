@@ -1,4 +1,4 @@
-import { PaginationDto } from '../pagination.dto';
+import { PaginationDto } from '../pagination.dto.js';
 
 export function createQueryObject(queryParams: PaginationDto) {
   const { orderBy, orderDirection, limit, offset } = queryParams;

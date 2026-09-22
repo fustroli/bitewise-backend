@@ -3,18 +3,19 @@ import {
   PersonalInformation,
   SocialProfiles,
   User,
-} from './entities';
+} from './entities/index.js';
 import {
   NotificationSettingsService,
   PersonalInformationService,
   SocialProfilesService,
   UserService,
-} from './service';
+} from './service/index.js';
 
 import { Module } from '@nestjs/common';
-import { StorageService } from '../storage/storage.service';
+import { PassportModule } from '@nestjs/passport';
+import { StorageService } from '../storage/storage.service.js';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserController } from './controller';
+import { UserController } from './controller/index.js';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { UserController } from './controller';
       SocialProfiles,
       NotificationSettings,
     ]),
+    PassportModule.register({}),
   ],
   controllers: [UserController],
   providers: [

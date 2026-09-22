@@ -1,6 +1,6 @@
-import { MealPlan } from '../entities/meal-plan.entity';
-import { serializeMeal } from '../../meal/serializers';
-import { MealPlanResponseDto } from 'src/modules/meal-plan/dto';
+import { MealPlan } from '../entities/meal-plan.entity.js';
+import { serializeMeal } from '../../meal/serializers/index.js';
+import { MealPlanResponseDto } from '../dto/index.js';
 
 export function serializeMealPlan(mealPlan: MealPlan): MealPlanResponseDto {
   return {

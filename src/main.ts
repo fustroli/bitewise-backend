@@ -1,11 +1,11 @@
-import * as cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';
 
-import { AppModule } from './app.module';
+import { AppModule } from './app.module.js';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { config } from './config';
+import { config } from './config/index.js';
 import helmet from 'helmet';
-import { initializeSwagger } from './swagger';
+import { initializeSwagger } from './swagger/index.js';
 import { json } from 'express';
 
 async function bootstrap() {

@@ -1,1 +1,1 @@
-export * from './meal-plan.controller';
+export * from './meal-plan.controller.js';

@@ -1,4 +1,4 @@
-import { EUnit } from 'src/modules/ingredient/enum';
+import { EUnit } from '../../ingredient/enum/index.js';
 
 export class MealIngredientResponseDto {
   id: number;

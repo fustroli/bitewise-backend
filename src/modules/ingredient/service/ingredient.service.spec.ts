@@ -1,15 +1,15 @@
 import { ConflictException, NotFoundException } from '@nestjs/common';
-import { Ingredient, stubIngredient } from '../entities';
+import { Ingredient, stubIngredient } from '../entities/index.js';
 
-import { IngredientService } from './index';
+import { IngredientService } from './index.js';
 import { Repository } from 'typeorm';
 import { Test } from '@nestjs/testing';
-import { User } from '../../user/entities';
-import { UserService } from '../../user/service';
+import { User } from '../../user/entities/index.js';
+import { UserService } from '../../user/service/index.js';
 import { getRepositoryToken } from '@nestjs/typeorm';
 
 const ingredientStub = stubIngredient();
-let ingredientResponseStub = stubIngredient();
+const ingredientResponseStub = stubIngredient();
 delete ingredientResponseStub.user;
 
 const ingredientStubs = [ingredientStub];

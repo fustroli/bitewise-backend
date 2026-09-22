@@ -1,17 +1,17 @@
 import * as bcrypt from 'bcrypt';
 
-import { CreateUserDto, LoginUserDto } from '../dto';
+import { CreateUserDto, LoginUserDto } from '../dto/index.js';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 
-import { AuthService } from './auth.service';
+import { AuthService } from './auth.service.js';
 import { ConfigModule } from '@nestjs/config';
 import { ConfigService } from '@nestjs/config';
 import { ForbiddenException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Test } from '@nestjs/testing';
-import { User } from '../../user/entities';
+import { User } from '../../user/entities/index.js';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { stubUser } from '../../user/entities';
+import { stubUser } from '../../user/entities/index.js';
 
 const userStub = stubUser();
 const signedToken = 'signed-jwt-token';

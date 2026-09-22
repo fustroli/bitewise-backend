@@ -1,3 +1,3 @@
-export * from './meal.entity';
-export * from './meal.entity.stub';
-export * from './meal-ingredient.entity';
+export * from './meal.entity.js';
+export * from './meal.entity.stub.js';
+export * from './meal-ingredient.entity.js';

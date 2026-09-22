@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Exclude } from 'class-transformer';
-import { User } from '../../user/entities';
+import { User } from '../../user/entities/index.js';
 
 export class IngredientResponseDto {
   @ApiProperty({

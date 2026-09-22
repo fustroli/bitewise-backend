@@ -1,6 +1,6 @@
-import { MealIngredientResponseDto, MealResponseDto } from '../dto';
-import { Meal } from '../entities/meal.entity';
-import { MealIngredient } from '../entities';
+import { MealIngredientResponseDto, MealResponseDto } from '../dto/index.js';
+import { Meal } from '../entities/meal.entity.js';
+import { MealIngredient } from '../entities/index.js';
 
 export function serializeMeal(meal: Meal): MealResponseDto {
   return {

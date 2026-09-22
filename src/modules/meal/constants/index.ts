@@ -1,1 +1,1 @@
-export * from './relations.constant';
+export * from './relations.constant.js';

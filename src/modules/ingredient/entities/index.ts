@@ -1,2 +1,2 @@
-export * from './ingredient.entity';
-export * from './ingredient.entity.stub';
+export * from './ingredient.entity.js';
+export * from './ingredient.entity.stub.js';

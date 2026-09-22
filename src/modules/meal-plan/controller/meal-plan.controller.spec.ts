@@ -1,18 +1,18 @@
-import { Meal, MealIngredient } from '../../meal/entities';
-import { MealPlan, stubMealPlan } from '../entities';
+import { Meal, MealIngredient } from '../../meal/entities/index.js';
+import { MealPlan, stubMealPlan } from '../entities/index.js';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
-import { CreateMealPlanDto } from '../dto';
-import { Ingredient } from '../../ingredient/entities';
-import { MealPlanController } from './meal-plan.controller';
-import { MealPlanService } from '../service';
-import { MealService } from '../../meal/service';
+import { CreateMealPlanDto } from '../dto/index.js';
+import { Ingredient } from '../../ingredient/entities/index.js';
+import { MealPlanController } from './meal-plan.controller.js';
+import { MealPlanService } from '../service/index.js';
+import { MealService } from '../../meal/service/index.js';
 import { Repository } from 'typeorm';
 import { Test } from '@nestjs/testing';
-import { User } from '../../user/entities';
-import { UserService } from '../../user/service';
+import { User } from '../../user/entities/index.js';
+import { UserService } from '../../user/service/index.js';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { serializeMealPlan } from '../serializers/meal-plan.serializer';
+import { serializeMealPlan } from '../serializers/meal-plan.serializer.js';
 
 const mealPlanStub = stubMealPlan();
 const mealPlanResponseStub = serializeMealPlan(mealPlanStub);

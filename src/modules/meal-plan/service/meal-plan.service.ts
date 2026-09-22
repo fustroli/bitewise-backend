@@ -5,13 +5,13 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UserService } from '../../user/service';
-import { MealPlan, MealPlanMeal } from '../entities';
-import { CreateMealPlanDto, UpdateMealPlanDto } from '../dto';
-import { MealService } from '../../meal/service';
-import { MEAL_PLAN_RELATIONS } from '../constants';
-import { PaginationDto } from '../../../common/pagination/pagination.dto';
-import { createQueryObject } from '../../../common/pagination/helpers';
+import { UserService } from '../../user/service/index.js';
+import { MealPlan, MealPlanMeal } from '../entities/index.js';
+import { CreateMealPlanDto, UpdateMealPlanDto } from '../dto/index.js';
+import { MealService } from '../../meal/service/index.js';
+import { MEAL_PLAN_RELATIONS } from '../constants/index.js';
+import { PaginationDto } from '../../../common/pagination/pagination.dto.js';
+import { createQueryObject } from '../../../common/pagination/helpers/index.js';
 
 @Injectable()
 export class MealPlanService {
@@ -125,7 +125,7 @@ export class MealPlanService {
   async getCurrentMealPlan(id: number) {
     const currentMealPlan = await this.repository.findOne({
       where: { id },
-      relations: ['user'],
+      relations: { user: true },
     });
     if (!currentMealPlan) {
       throw new NotFoundException('No meal plan found with the provided id.');

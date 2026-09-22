@@ -1,6 +1,6 @@
 import { validate } from 'class-validator';
-import { stubIngredient } from '../entities';
-import { CreateIngredientDto } from './create-ingredient.dto';
+import { stubIngredient } from '../entities/index.js';
+import { CreateIngredientDto } from './create-ingredient.dto.js';
 
 describe('CreateIngredientDto', () => {
   let dto: CreateIngredientDto;
