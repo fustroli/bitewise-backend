@@ -3,6 +3,7 @@ import 'dotenv/config';
 export const config: IConfig = {
   PORT: +process.env.PORT,
   FRONTEND_URL: process.env.FRONTEND_URL,
+  COOKIE_DOMAIN: process.env.COOKIE_DOMAIN,
   SALT_WORK_FACTOR: +process.env.SALT_WORK_FACTOR,
   NODE_ENV: process.env.NODE_ENV,
   THROTTLER: {
@@ -41,6 +42,7 @@ export const config: IConfig = {
 export interface IConfig {
   PORT: number;
   FRONTEND_URL: string;
+  COOKIE_DOMAIN?: string;
   SALT_WORK_FACTOR: number;
   NODE_ENV: string;
   THROTTLER: {

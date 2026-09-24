@@ -90,6 +90,7 @@ export class TokenService {
       sameSite: 'strict',
       httpOnly: true,
       path: '/',
+      ...(config.COOKIE_DOMAIN ? { domain: config.COOKIE_DOMAIN } : {}),
     };
   }
 
