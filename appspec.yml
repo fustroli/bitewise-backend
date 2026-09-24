@@ -4,6 +4,14 @@ files:
   - source: /
     destination: /home/ubuntu/bitewise-backend
 file_exists_behavior: OVERWRITE
+permissions:
+  - object: /home/ubuntu/bitewise-backend
+    pattern: "**"
+    owner: ubuntu
+    group: ubuntu
+    type:
+      - file
+      - directory
 hooks:
   ApplicationStop:
     - location: scripts/stop.sh
