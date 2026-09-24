@@ -22,7 +22,7 @@
     "docker:dev": "docker compose -f docker-compose.dev.yml up --remove-orphans",
     "docker:dev:build": "docker compose -f docker-compose.dev.yml up --build",
     "docker:dev:down": "docker compose -f docker-compose.dev.yml down",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "dependencies": {
     "@google-cloud/storage": "^8.2.0",
