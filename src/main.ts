@@ -12,6 +12,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const port = config.PORT;
 
+  //serve all routes under /api
+  app.setGlobalPrefix('api');
+
   //secure app by setting HTTP response headers
   app.use(helmet());
 

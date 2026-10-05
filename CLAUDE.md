@@ -8,8 +8,8 @@ NestJS REST API backend for BiteWise, a meal/ingredient tracking platform.
 - **ORM**: TypeORM 1.1 with MySQL (`mysql2`)
 - **Auth**: JWT (access + refresh, cookie-based) + Passport (email/password, Google OAuth, Facebook OAuth)
 - **Storage**: Google Cloud Storage (`@google-cloud/storage`) — used for avatar uploads
-- **API Docs**: Swagger (`@nestjs/swagger`)
-- **Health checks**: `@nestjs/terminus` (`GET /health` liveness, `GET /health/ready` readiness w/ DB check)
+- **API Docs**: Swagger (`@nestjs/swagger`) at `/api/docs`; all routes use global prefix `/api`
+- **Health checks**: `@nestjs/terminus` (`GET /api/health` liveness, `GET /api/health/ready` readiness w/ DB check)
 - **Testing**: Jest (ESM mode: `ts-jest` with `useESM`, run via `--experimental-vm-modules`)
 - **Package manager**: npm
 - **Linting/Formatting**: ESLint (flat config, `eslint.config.js`) + Prettier

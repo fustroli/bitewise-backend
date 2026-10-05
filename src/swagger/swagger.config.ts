@@ -9,5 +9,5 @@ export function initializeSwagger(app: INestApplication) {
     .addTag('bitewise')
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('api/docs', app, document);
 }
