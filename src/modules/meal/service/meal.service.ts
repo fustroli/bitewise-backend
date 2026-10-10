@@ -1,6 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import {
   CreateMealDto,
   IngredientQuantityDto,
@@ -8,32 +12,35 @@ import {
 } from '../dto/index.js';
 import { Meal, MealIngredient } from '../entities/index.js';
 import { Ingredient } from '../../ingredient/entities/index.js';
+import { MealPlan } from '../../meal-plan/entities/index.js';
 import { MEAL_RELATIONS } from '../constants/index.js';
 import { IPaginated, PaginationDto } from '../../../common/pagination/index.js';
 import { OwnedRepository } from '../../../common/ownership/index.js';
 
+// Owner-scoped repositories bound to one EntityManager (a transaction's, or the default)
+function ownedIn(manager: EntityManager) {
+  return {
+    meals: new OwnedRepository(manager.getRepository(Meal), {
+      label: 'meal',
+      relations: MEAL_RELATIONS,
+      sortable: ['name', 'createTimeStamp', 'updateTimeStamp'],
+    }),
+    ingredients: new OwnedRepository(manager.getRepository(Ingredient), {
+      label: 'ingredient',
+      sortable: [],
+    }),
+  };
+}
+
 @Injectable()
 export class MealService {
   private readonly meals: OwnedRepository<Meal>;
-  private readonly ingredients: OwnedRepository<Ingredient>;
 
   constructor(
     @InjectRepository(Meal)
     private readonly repository: Repository<Meal>,
-    @InjectRepository(Ingredient)
-    ingredientRepository: Repository<Ingredient>,
-    @InjectRepository(MealIngredient)
-    private readonly mealIngredientRepository: Repository<MealIngredient>,
   ) {
-    this.meals = new OwnedRepository(repository, {
-      label: 'meal',
-      relations: MEAL_RELATIONS,
-      sortable: ['name', 'createTimeStamp', 'updateTimeStamp'],
-    });
-    this.ingredients = new OwnedRepository(ingredientRepository, {
-      label: 'ingredient',
-      sortable: [],
-    });
+    this.meals = ownedIn(repository.manager).meals;
   }
 
   getOne(mealId: number, userId: number): Promise<Meal> {
@@ -47,55 +54,90 @@ export class MealService {
     return this.meals.listOwned(userId, paginationDto);
   }
 
-  async createOne(data: CreateMealDto, userId: number): Promise<Meal> {
-    const mealIngredients = await this.toMealIngredients(
-      data.mealIngredients,
-      userId,
-    );
-
-    return this.meals.createOwned({ name: data.name, mealIngredients }, userId);
-  }
-
-  async updateOne(
-    id: number,
-    data: UpdateMealDto,
-    userId: number,
-  ): Promise<Meal> {
-    const meal = await this.meals.findOwnedOrFail(id, userId, {});
-
-    if (data.name !== undefined) meal.name = data.name;
-
-    if (data.mealIngredients) {
-      const mealIngredients = await this.toMealIngredients(
+  createOne(data: CreateMealDto, userId: number): Promise<Meal> {
+    return this.repository.manager.transaction(async (manager) => {
+      const { meals, ingredients } = ownedIn(manager);
+      const mealIngredients = await this.compose(
+        manager,
+        ingredients,
+        [],
         data.mealIngredients,
         userId,
       );
-      await this.mealIngredientRepository.delete({ meal: { id } });
-      meal.mealIngredients = mealIngredients as MealIngredient[];
-    }
 
-    await this.repository.save(meal);
-
-    return this.meals.findOwnedOrFail(id, userId);
+      return meals.createOwned({ name: data.name, mealIngredients }, userId);
+    });
   }
 
+  updateOne(id: number, data: UpdateMealDto, userId: number): Promise<Meal> {
+    return this.repository.manager.transaction(async (manager) => {
+      const { meals, ingredients } = ownedIn(manager);
+      const meal = await meals.findOwnedOrFail(id, userId, {
+        mealIngredients: { ingredient: true },
+      });
+
+      if (data.name !== undefined) meal.name = data.name;
+      if (data.mealIngredients)
+        meal.mealIngredients = await this.compose(
+          manager,
+          ingredients,
+          meal.mealIngredients,
+          data.mealIngredients,
+          userId,
+        );
+
+      await manager.save(meal);
+      return meals.findOwnedOrFail(id, userId);
+    });
+  }
+
+  /** 409 while any Meal plan contains the Meal. */
   deleteOne(id: number, userId: number): Promise<void> {
-    return this.meals.softDeleteOwned(id, userId);
+    return this.repository.manager.transaction(async (manager) => {
+      await ownedIn(manager).meals.findOwnedOrFail(id, userId, {});
+
+      const mealPlans = await manager.find(MealPlan, {
+        where: { mealPlanMeals: { meal: { id } } },
+        select: { id: true, name: true },
+      });
+      if (mealPlans.length)
+        throw new ConflictException(
+          `This meal is in meal plans: ${mealPlans.map((p) => p.name).join(', ')}.`,
+        );
+
+      await manager.softDelete(Meal, id);
+    });
   }
 
-  // Only the Owner's own Ingredients may be used; any other id is a 404
-  private async toMealIngredients(
+  /**
+   * The Meal's new set of Meal ingredients: distinct, owned Ingredients
+   * (any other id is a 404). Rows for Ingredients already in the Meal are
+   * reused; rows left out are deleted on save (orphanedRowAction).
+   */
+  private async compose(
+    manager: EntityManager,
+    ingredients: OwnedRepository<Ingredient>,
+    current: MealIngredient[],
     items: IngredientQuantityDto[],
     userId: number,
-  ): Promise<DeepPartial<MealIngredient>[]> {
-    await this.ingredients.findManyOwned(
-      items.map((item) => item.ingredientId),
-      userId,
-    );
+  ): Promise<MealIngredient[]> {
+    const ids = items.map((item) => item.ingredientId);
+    if (new Set(ids).size !== ids.length)
+      throw new BadRequestException(
+        'Each ingredient may appear only once in a meal',
+      );
 
-    return items.map(({ ingredientId, quantity }) => ({
-      ingredient: { id: ingredientId },
-      quantity,
-    }));
+    await ingredients.findManyOwned(ids, userId);
+
+    const existing = new Map(
+      current.map((row) => [row.ingredient?.id, row] as const),
+    );
+    return items.map(({ ingredientId, quantity }) =>
+      Object.assign(
+        existing.get(ingredientId) ??
+          manager.create(MealIngredient, { ingredient: { id: ingredientId } }),
+        { quantity },
+      ),
+    );
   }
 }

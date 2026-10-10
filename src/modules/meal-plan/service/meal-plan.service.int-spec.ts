@@ -1,5 +1,9 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
+import { DataSource, IsNull } from 'typeorm';
 import {
   connectTestDatabase,
   createTestDatabase,
@@ -35,11 +39,7 @@ describe('MealPlanService', () => {
 
   beforeAll(async () => {
     dataSource = await connectTestDatabase(await createTestDatabase());
-    mealPlans = new MealPlanService(
-      dataSource.getRepository(MealPlan),
-      dataSource.getRepository(Meal),
-      dataSource.getRepository(MealPlanMeal),
-    );
+    mealPlans = new MealPlanService(dataSource.getRepository(MealPlan));
   });
 
   afterAll(() => dataSource.destroy());
@@ -78,6 +78,33 @@ describe('MealPlanService', () => {
           owner.id,
         ),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('400s on a duplicate Meal', async () => {
+      const oats = await createMeal('Oats', owner);
+
+      await expect(
+        mealPlans.createOne(
+          { name: 'Monday', mealIds: [oats.id, oats.id] },
+          owner.id,
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('is backed by a unique (meal plan, meal) index', async () => {
+      const oats = await createMeal('Oats', owner);
+      const mealPlan = await mealPlans.createOne(
+        { name: 'Monday', mealIds: [oats.id] },
+        owner.id,
+      );
+
+      const conflict = await conflictOf(
+        dataSource.getRepository(MealPlanMeal).insert({
+          mealPlan: { id: mealPlan.id },
+          meal: { id: oats.id },
+        }),
+      );
+      expect(conflict).toBeInstanceOf(ConflictException);
     });
 
     it('409s on a duplicate active name for the same Owner', async () => {
@@ -194,6 +221,60 @@ describe('MealPlanService', () => {
       expect(mealIdsOf(await mealPlans.getOne(mealPlan.id, owner.id))).toEqual([
         oats.id,
       ]);
+    });
+
+    it('keeps the row of a Meal that stays', async () => {
+      const salad = await createMeal('Salad', owner);
+      const [oatsRow] = mealPlan.mealPlanMeals;
+
+      const updated = await mealPlans.updateOne(
+        mealPlan.id,
+        { mealIds: [salad.id, oats.id] },
+        owner.id,
+      );
+
+      expect(
+        updated.mealPlanMeals.find((mpm) => mpm.meal.id === oats.id)?.id,
+      ).toBe(oatsRow.id);
+      expect(
+        await dataSource
+          .getRepository(MealPlanMeal)
+          .countBy({ mealPlan: IsNull() }),
+      ).toBe(0);
+    });
+
+    it('400s on a duplicate Meal and changes nothing', async () => {
+      await expect(
+        mealPlans.updateOne(
+          mealPlan.id,
+          { mealIds: [oats.id, oats.id] },
+          owner.id,
+        ),
+      ).rejects.toThrow(BadRequestException);
+      expect(mealIdsOf(await mealPlans.getOne(mealPlan.id, owner.id))).toEqual([
+        oats.id,
+      ]);
+    });
+
+    it('rolls the new Meals back when the rename fails', async () => {
+      const salad = await createMeal('Salad', owner);
+      await mealPlans.createOne(
+        { name: 'Tuesday', mealIds: [oats.id] },
+        owner.id,
+      );
+
+      const conflict = await conflictOf(
+        mealPlans.updateOne(
+          mealPlan.id,
+          { name: 'Tuesday', mealIds: [salad.id] },
+          owner.id,
+        ),
+      );
+
+      expect(conflict).toBeInstanceOf(ConflictException);
+      const unchanged = await mealPlans.getOne(mealPlan.id, owner.id);
+      expect(unchanged.name).toBe('Monday');
+      expect(mealIdsOf(unchanged)).toEqual([oats.id]);
     });
 
     it("404s for someone else's Meal plan", async () => {

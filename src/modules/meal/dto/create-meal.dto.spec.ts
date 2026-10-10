@@ -68,4 +68,17 @@ describe('CreateMealDto', () => {
     expect(errors[0].constraints).toBeUndefined();
     expect(errors[0].children.length).toBeGreaterThan(0);
   });
+
+  it('should fail if an ingredient appears twice', async () => {
+    dto = plainToInstance(CreateMealDto, {
+      name: 'Apples',
+      mealIngredients: [
+        { ingredientId: 1, quantity: 1 },
+        { ingredientId: 1, quantity: 2 },
+      ],
+    });
+
+    const errors = await validate(dto);
+    expect(errors[0].constraints.arrayUnique).toBeDefined();
+  });
 });

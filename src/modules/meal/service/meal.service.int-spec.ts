@@ -1,5 +1,9 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
+import { DataSource, IsNull } from 'typeorm';
 import {
   connectTestDatabase,
   createTestDatabase,
@@ -11,10 +15,12 @@ import { Ingredient } from '../../ingredient/entities/index.js';
 import { EUnit } from '../../ingredient/enum/index.js';
 import { User } from '../../user/entities/index.js';
 import { Meal, MealIngredient } from '../entities/index.js';
+import { MealPlan, MealPlanMeal } from '../../meal-plan/entities/index.js';
 import { MealService } from './meal.service.js';
 
 const MISSING_ID = 999_999;
 const NEW_QUANTITY = 30;
+const OUT_OF_RANGE = 1e12;
 
 describe('MealService', () => {
   let dataSource: DataSource;
@@ -48,11 +54,7 @@ describe('MealService', () => {
 
   beforeAll(async () => {
     dataSource = await connectTestDatabase(await createTestDatabase());
-    meals = new MealService(
-      dataSource.getRepository(Meal),
-      dataSource.getRepository(Ingredient),
-      dataSource.getRepository(MealIngredient),
-    );
+    meals = new MealService(dataSource.getRepository(Meal));
   });
 
   afterAll(() => dataSource.destroy());
@@ -106,6 +108,43 @@ describe('MealService', () => {
           owner.id,
         ),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('400s on a duplicate Ingredient', async () => {
+      const apple = await createIngredient('Apple', owner);
+
+      await expect(
+        meals.createOne(
+          {
+            name: 'Apples',
+            mealIngredients: [
+              { ingredientId: apple.id, quantity: 1 },
+              { ingredientId: apple.id, quantity: 2 },
+            ],
+          },
+          owner.id,
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('is backed by a unique (meal, ingredient) index', async () => {
+      const apple = await createIngredient('Apple', owner);
+      const meal = await meals.createOne(
+        {
+          name: 'Apples',
+          mealIngredients: [{ ingredientId: apple.id, quantity: 1 }],
+        },
+        owner.id,
+      );
+
+      const conflict = await conflictOf(
+        dataSource.getRepository(MealIngredient).insert({
+          meal: { id: meal.id },
+          ingredient: { id: apple.id },
+          quantity: 2,
+        }),
+      );
+      expect(conflict).toBeInstanceOf(ConflictException);
     });
 
     it('409s on a duplicate active name for the same Owner', async () => {
@@ -242,6 +281,86 @@ describe('MealService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
+    it('keeps the row of an Ingredient that stays, updating its quantity', async () => {
+      const pear = await createIngredient('Pear', owner);
+      const [appleRow] = meal.mealIngredients;
+
+      const updated = await meals.updateOne(
+        meal.id,
+        {
+          mealIngredients: [
+            { ingredientId: apple.id, quantity: NEW_QUANTITY },
+            { ingredientId: pear.id, quantity: 1 },
+          ],
+        },
+        owner.id,
+      );
+
+      const kept = updated.mealIngredients.find(
+        (mi) => mi.ingredient.id === apple.id,
+      );
+      expect(kept).toMatchObject({ id: appleRow.id, quantity: NEW_QUANTITY });
+      expect(ingredientIdsOf(updated)).toEqual([apple.id, pear.id].sort());
+    });
+
+    it('leaves no orphan Meal ingredient rows', async () => {
+      const pear = await createIngredient('Pear', owner);
+
+      await meals.updateOne(
+        meal.id,
+        { mealIngredients: [{ ingredientId: pear.id, quantity: 1 }] },
+        owner.id,
+      );
+
+      expect(
+        await dataSource
+          .getRepository(MealIngredient)
+          .countBy({ meal: IsNull() }),
+      ).toBe(0);
+    });
+
+    it('400s on a duplicate Ingredient and changes nothing', async () => {
+      await expect(
+        meals.updateOne(
+          meal.id,
+          {
+            name: 'Double apple',
+            mealIngredients: [
+              { ingredientId: apple.id, quantity: 1 },
+              { ingredientId: apple.id, quantity: 2 },
+            ],
+          },
+          owner.id,
+        ),
+      ).rejects.toThrow(BadRequestException);
+      expect(await meals.getOne(meal.id, owner.id)).toMatchObject({
+        name: 'Fruit salad',
+      });
+    });
+
+    it('rolls everything back when saving the Meal ingredients fails', async () => {
+      const pear = await createIngredient('Pear', owner);
+
+      // Too large for DECIMAL(10,2): the Meal ingredient insert fails after
+      // the rename has been written
+      await expect(
+        meals.updateOne(
+          meal.id,
+          {
+            name: 'Pear salad',
+            mealIngredients: [
+              { ingredientId: pear.id, quantity: OUT_OF_RANGE },
+            ],
+          },
+          owner.id,
+        ),
+      ).rejects.toThrow();
+
+      const unchanged = await meals.getOne(meal.id, owner.id);
+      expect(unchanged.name).toBe('Fruit salad');
+      expect(ingredientIdsOf(unchanged)).toEqual([apple.id]);
+    });
+
     it("404s for someone else's Meal", async () => {
       await expect(
         meals.updateOne(meal.id, { name: 'Mine now' }, stranger.id),
@@ -264,6 +383,44 @@ describe('MealService', () => {
         NotFoundException,
       );
       await expect(meals.getOne(meal.id, owner.id)).resolves.toBeDefined();
+    });
+
+    it('409s while a Meal plan contains the Meal, naming it', async () => {
+      const apple = await createIngredient('Apple', owner);
+      const meal = await meals.createOne(
+        {
+          name: 'Fruit salad',
+          mealIngredients: [{ ingredientId: apple.id, quantity: 100 }],
+        },
+        owner.id,
+      );
+      await dataSource.getRepository(MealPlan).save({
+        name: 'Monday',
+        user: { id: owner.id },
+        mealPlanMeals: [{ meal: { id: meal.id } } as MealPlanMeal],
+      });
+
+      await expect(meals.deleteOne(meal.id, owner.id)).rejects.toThrow(
+        'This meal is in meal plans: Monday.',
+      );
+      await expect(meals.getOne(meal.id, owner.id)).resolves.toBeDefined();
+    });
+
+    it('deletes a Meal no Meal plan contains', async () => {
+      const apple = await createIngredient('Apple', owner);
+      const meal = await meals.createOne(
+        {
+          name: 'Fruit salad',
+          mealIngredients: [{ ingredientId: apple.id, quantity: 100 }],
+        },
+        owner.id,
+      );
+
+      await meals.deleteOne(meal.id, owner.id);
+
+      await expect(meals.getOne(meal.id, owner.id)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

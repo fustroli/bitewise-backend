@@ -30,4 +30,24 @@ describe('CreateMealPlanDto', () => {
     expect(errors.length).toBeGreaterThan(0);
     expect(errors[0].constraints.arrayMinSize).toBeDefined();
   });
+
+  it('should fail if a meal appears twice', async () => {
+    dto = Object.assign(new CreateMealPlanDto(), {
+      name: 'Monday',
+      mealIds: [1, 1],
+    });
+
+    const errors = await validate(dto);
+    expect(errors[0].constraints.arrayUnique).toBeDefined();
+  });
+
+  it('should fail if a meal id is not an integer', async () => {
+    dto = Object.assign(new CreateMealPlanDto(), {
+      name: 'Monday',
+      mealIds: ['1'],
+    });
+
+    const errors = await validate(dto);
+    expect(errors[0].constraints.isInt).toBeDefined();
+  });
 });

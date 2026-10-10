@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   ArrayMinSize,
+  ArrayUnique,
   IsArray,
   IsNotEmpty,
   IsString,
@@ -23,6 +24,9 @@ export class CreateMealDto {
   @IsArray()
   @ArrayMinSize(1, {
     message: 'Meal must have at least one ingredient',
+  })
+  @ArrayUnique((item: IngredientQuantityDto) => item?.ingredientId, {
+    message: 'Each ingredient may appear only once in a meal',
   })
   @ValidateNested({ each: true })
   @Type(() => IngredientQuantityDto)

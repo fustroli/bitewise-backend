@@ -92,6 +92,10 @@ barrel per directory. Import from the barrel (`../entities/index.js`), not indiv
   injected repo. The Owner always comes from the JWT (`@CurrentUser()`), never the request
   body; foreign and missing ids both 404. Referenced Owned resources (a Meal's Ingredients,
   a Meal plan's Meals) are resolved with `findManyOwned`, never a raw repo lookup.
+- Composition: a Meal's Meal ingredients / a Meal plan's Meals are set by the service's private
+  `compose` step (distinct members, `findManyOwned`, reuse kept join rows) inside one
+  `manager.transaction`; dropped join rows are deleted via `orphanedRowAction: 'delete'`. Deleting
+  an Ingredient used by a Meal, or a Meal in a Meal plan, is a 409
 - Per-Owner name uniqueness: `@ActiveNameColumn()` + a unique `@Index(activeNameIndexName(label),
   ['user', 'activeName'])` on the entity (ADR-0001); the global `DuplicateEntryFilter` turns
   `ER_DUP_ENTRY` into a 409
