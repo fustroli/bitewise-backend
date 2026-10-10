@@ -7,7 +7,7 @@ import {
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../entities/index.js';
-import { CreateSocialUserDto, UpdateUserDto } from '../dto/index.js';
+import { UpdateUserDto } from '../dto/index.js';
 import { PersonalInformationService } from './personal-information.service.js';
 import { SocialProfilesService } from './social-profiles.service.js';
 import { NotificationSettingsService } from './notifications.service.js';
@@ -164,19 +164,9 @@ export class UserService {
     return user;
   }
 
-  async findByEmail(email: string) {
-    const user = this.repository.findOne({ where: { email } });
-    if (!user) throw new NotFoundException();
-    return user;
-  }
-
   async findById(id: number) {
     const user = this.repository.findOne({ where: { id } });
     if (!user) throw new NotFoundException();
     return user;
-  }
-
-  async createUser(user: CreateSocialUserDto) {
-    return this.repository.save(user);
   }
 }

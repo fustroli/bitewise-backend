@@ -1,1 +1,1 @@
-export * from './current-user.interface.js';
+export * from './jwt-claims.interface.js';

@@ -10,7 +10,6 @@ export function stubUser(override: Partial<User> = {}): User {
     personalInformation: null,
     socialProfiles: null,
     notificationSettings: null,
-    refreshToken: null,
     avatarUrl: null,
     googleId: null,
     createTimeStamp: new Date(),

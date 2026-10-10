@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Redirect,
   Req,
   Res,
   UseGuards,
@@ -14,40 +15,73 @@ import {
   LoginUserDto,
   ChangePasswordDto,
 } from '../dto/index.js';
-import { ApiTags } from '@nestjs/swagger';
-import { AuthService } from '../services/index.js';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { SessionService } from '../services/index.js';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { Response } from 'express';
 import {
   FacebookAuthGuard,
   GoogleAuthGuard,
-  RefreshJwtGuard,
+  JwtGuard,
 } from '../guard/index.js';
 import { config } from '../../../config/index.js';
-import { CurrentUser } from '../decorators/index.js';
+import {
+  BearerToken,
+  CurrentSessionId,
+  CurrentUser,
+} from '../decorators/index.js';
+import { clearSessionCookies, setSessionCookies } from '../cookies/index.js';
 
 @UseGuards(ThrottlerGuard)
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly sessions: SessionService) {}
 
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
-  signup(@Body() dto: CreateUserDto, @Res() res: Response) {
-    return this.authService.signUp(dto, res);
+  async signup(
+    @Body() dto: CreateUserDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { user, tokens } = await this.sessions.signUp(dto);
+    setSessionCookies(res, tokens);
+    return user;
   }
 
-  @HttpCode(HttpStatus.OK)
   @Post('signin')
-  signin(@Body() dto: LoginUserDto, @Res() res: Response) {
-    return this.authService.signIn(dto, res);
+  @HttpCode(HttpStatus.OK)
+  async signin(
+    @Body() dto: LoginUserDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { user, tokens } = await this.sessions.signIn(dto);
+    setSessionCookies(res, tokens);
+    return user;
   }
 
   @Post('refresh')
-  @UseGuards(RefreshJwtGuard)
-  refresh(@Req() req, @Res() res: Response) {
-    return this.authService.refresh(req, res);
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  async refresh(
+    @BearerToken() refreshToken: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { user, tokens } = await this.sessions.rotate(refreshToken);
+    setSessionCookies(res, tokens);
+    return user;
+  }
+
+  @Post('signout')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  async signout(
+    @BearerToken() refreshToken: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { sid } = await this.sessions.verifyRefreshToken(refreshToken);
+    await this.sessions.signOut(sid);
+    clearSessionCookies(res);
   }
 
   @Get('google/login')
@@ -58,10 +92,14 @@ export class AuthController {
 
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
-  async googleLoginCallback(@Req() req, @Res() res: Response) {
-    const user = req.user;
-    await this.authService.googleSignIn(user, res);
-    res.redirect(`${config.FRONTEND_URL}/dashboard`);
+  @Redirect()
+  async googleLoginCallback(
+    @Req() req,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { tokens } = await this.sessions.signInSocial(req.user);
+    setSessionCookies(res, tokens);
+    return { url: `${config.FRONTEND_URL}/dashboard` };
   }
 
   @Get('facebook/login')
@@ -72,18 +110,25 @@ export class AuthController {
 
   @Get('facebook/callback')
   @UseGuards(FacebookAuthGuard)
-  async facebookLoginCallback(@Req() req, @Res() res: Response) {
-    const user = req.user;
-
-    await this.authService.facebookSignIn(user, res);
-    res.redirect(`${config.FRONTEND_URL}/dashboard?token=${req.accessToken}`);
+  @Redirect()
+  async facebookLoginCallback(
+    @Req() req,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { tokens } = await this.sessions.signInSocial(req.user);
+    setSessionCookies(res, tokens);
+    return { url: `${config.FRONTEND_URL}/dashboard` };
   }
 
   @Post('change-password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(JwtGuard)
+  @ApiBearerAuth()
   changePassword(
-    @CurrentUser('sub') id: number,
+    @CurrentUser('id') userId: number,
+    @CurrentSessionId() sid: string,
     @Body() dto: ChangePasswordDto,
   ) {
-    return this.authService.changePassword(dto, id);
+    return this.sessions.changePassword(userId, sid, dto);
   }
 }

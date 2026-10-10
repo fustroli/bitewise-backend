@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, Profile } from 'passport-facebook';
-import { AuthService } from '../services/index.js';
 import { Inject } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import facebookOAuth from '../config/facebook-oauth.config.js';
@@ -12,7 +11,6 @@ export class FacebookStrategy extends PassportStrategy(Strategy) {
   constructor(
     @Inject(facebookOAuth.KEY)
     private readonly facebookConfiguration: ConfigType<typeof facebookOAuth>,
-    private readonly authService: AuthService,
   ) {
     super({
       clientID: facebookConfiguration.clientId,

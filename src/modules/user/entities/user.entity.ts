@@ -34,10 +34,6 @@ export class User {
   @OneToMany(() => Meal, (meal) => meal.user)
   meals: Relation<Meal>[];
 
-  @Exclude()
-  @Column({ default: null })
-  refreshToken: string | null;
-
   @OneToOne(() => PersonalInformation, { cascade: false, eager: true })
   @JoinColumn()
   personalInformation: Relation<PersonalInformation>;
