@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -15,14 +16,22 @@ import {
 import { MealIngredient } from '../../meal/entities/meal-ingredient.entity.js';
 import { MealPlanMeal } from '../../meal-plan/entities/index.js';
 import { User } from '../../user/entities/index.js';
+import {
+  ActiveNameColumn,
+  activeNameIndexName,
+} from '../../../common/ownership/index.js';
 
 @Entity()
+@Index(activeNameIndexName('meal'), ['user', 'activeName'], { unique: true })
 export class Meal {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
   @Column()
   name: string;
+
+  @ActiveNameColumn()
+  activeName?: string | null;
 
   @OneToMany(() => MealIngredient, (mealIngredient) => mealIngredient.meal, {
     cascade: true,
