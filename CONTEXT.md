@@ -4,6 +4,12 @@ Meal and ingredient tracking: users build Ingredients, compose them into Meals, 
 
 ## Language
 
+### Identity
+
+**Session**:
+The period during which a User is signed in on one device. It starts at sign-in and ends at sign-out, account deletion, or when its refresh token is rejected; a User may have several Sessions at once.
+_Avoid_: Login (as a noun), auth, token
+
 ### Ownership
 
 **Owner**:
