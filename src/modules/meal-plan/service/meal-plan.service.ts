@@ -1,87 +1,55 @@
-import {
-  ForbiddenException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { UserService } from '../../user/service/index.js';
+import { DeepPartial, Repository } from 'typeorm';
 import { MealPlan, MealPlanMeal } from '../entities/index.js';
 import { CreateMealPlanDto, UpdateMealPlanDto } from '../dto/index.js';
-import { MealService } from '../../meal/service/index.js';
+import { Meal } from '../../meal/entities/index.js';
 import { MEAL_PLAN_RELATIONS } from '../constants/index.js';
-import {
-  createQueryObject,
-  IPaginated,
-  PaginationDto,
-} from '../../../common/pagination/index.js';
+import { IPaginated, PaginationDto } from '../../../common/pagination/index.js';
+import { OwnedRepository } from '../../../common/ownership/index.js';
 
 @Injectable()
 export class MealPlanService {
+  private readonly mealPlans: OwnedRepository<MealPlan>;
+  private readonly meals: OwnedRepository<Meal>;
+
   constructor(
     @InjectRepository(MealPlan)
     private readonly repository: Repository<MealPlan>,
-    private readonly userService: UserService,
-    private readonly mealService: MealService,
-  ) {}
-
-  async getOne(mealPlanId: number, userId: number) {
-    const mealPlan = await this.repository.findOne({
-      where: { id: mealPlanId },
+    @InjectRepository(Meal)
+    mealRepository: Repository<Meal>,
+    @InjectRepository(MealPlanMeal)
+    private readonly mealPlanMealRepository: Repository<MealPlanMeal>,
+  ) {
+    this.mealPlans = new OwnedRepository(repository, {
+      label: 'meal plan',
       relations: MEAL_PLAN_RELATIONS,
+      sortable: ['name', 'createTimeStamp', 'updateTimeStamp'],
     });
-    if (!mealPlan) {
-      throw new NotFoundException(`No meal plan found with the provided ID.`);
-    }
-
-    await this.checkMealPlanOwner(mealPlan, userId);
-
-    return mealPlan;
+    this.meals = new OwnedRepository(mealRepository, {
+      label: 'meal',
+      sortable: [],
+    });
   }
 
-  async getAll(
+  getOne(mealPlanId: number, userId: number): Promise<MealPlan> {
+    return this.mealPlans.findOwnedOrFail(mealPlanId, userId);
+  }
+
+  getAll(
     userId: number,
     paginationDto: PaginationDto,
   ): Promise<IPaginated<MealPlan>> {
-    const { order, take, skip } = createQueryObject(paginationDto);
-
-    const [data, count] = await this.repository.findAndCount({
-      where: { user: { id: userId } },
-      relations: MEAL_PLAN_RELATIONS,
-      take,
-      skip,
-      ...(order && { order }),
-    });
-
-    return {
-      data,
-      count,
-    };
+    return this.mealPlans.listOwned(userId, paginationDto);
   }
 
-  async createOne(data: CreateMealPlanDto): Promise<MealPlan> {
-    const user = await this.userService.validateUser(data.userId);
+  async createOne(data: CreateMealPlanDto, userId: number): Promise<MealPlan> {
+    const mealPlanMeals = await this.toMealPlanMeals(data.mealIds, userId);
 
-    const meals = await this.mealService.findMealsByIds(user.id, data.mealIds);
-    const mealPlan = this.repository.create({
-      name: data.name,
-      user: user,
-    });
-
-    mealPlan.mealPlanMeals = data.mealIds.map((mealId) => {
-      const meal = meals.find((m) => m.id === mealId);
-      if (!meal) {
-        throw new NotFoundException(`Meal with ID ${mealId} not found.`);
-      }
-      const mealPlanMeal = new MealPlanMeal();
-      mealPlanMeal.mealPlan = mealPlan;
-      mealPlanMeal.meal = meal;
-      return mealPlanMeal;
-    });
-
-    const savedMealPlan = await this.repository.save(mealPlan);
-
-    return savedMealPlan;
+    return this.mealPlans.createOwned(
+      { name: data.name, mealPlanMeals },
+      userId,
+    );
   }
 
   async updateOne(
@@ -89,59 +57,32 @@ export class MealPlanService {
     data: UpdateMealPlanDto,
     userId: number,
   ): Promise<MealPlan> {
-    const currentMealPlan = await this.getCurrentMealPlan(id);
+    const mealPlan = await this.mealPlans.findOwnedOrFail(id, userId, {});
 
-    await this.checkMealPlanOwner(currentMealPlan, userId);
+    if (data.name !== undefined) mealPlan.name = data.name;
 
-    const user = await this.userService.validateUser(data.userId);
-
-    const meals = await this.mealService.findMealsByIds(user.id, data.mealIds);
-
-    const mealPlanMeals = meals.map((meal) => {
-      const mealPlanMeal = new MealPlanMeal();
-      mealPlanMeal.mealPlan = currentMealPlan;
-      mealPlanMeal.meal = meal;
-      return mealPlanMeal;
-    });
-    const updatedMealPlan: MealPlan = {
-      ...currentMealPlan,
-      ...data,
-      mealPlanMeals,
-    };
-
-    const savedMealPlan = await this.repository.save(updatedMealPlan);
-
-    return savedMealPlan;
-  }
-
-  async deleteOne(id: number, userId: number): Promise<void> {
-    try {
-      const currentMealPlan = await this.getCurrentMealPlan(id);
-
-      await this.checkMealPlanOwner(currentMealPlan, userId);
-      await this.repository.softDelete(id);
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async getCurrentMealPlan(id: number) {
-    const currentMealPlan = await this.repository.findOne({
-      where: { id },
-      relations: { user: true },
-    });
-    if (!currentMealPlan) {
-      throw new NotFoundException('No meal plan found with the provided id.');
+    if (data.mealIds) {
+      const mealPlanMeals = await this.toMealPlanMeals(data.mealIds, userId);
+      await this.mealPlanMealRepository.delete({ mealPlan: { id } });
+      mealPlan.mealPlanMeals = mealPlanMeals as MealPlanMeal[];
     }
 
-    return currentMealPlan;
+    await this.repository.save(mealPlan);
+
+    return this.mealPlans.findOwnedOrFail(id, userId);
   }
 
-  private async checkMealPlanOwner(mealPlan: MealPlan, userId: number) {
-    if (mealPlan.user.id !== userId) {
-      throw new ForbiddenException(
-        'You are not authorized to access this meal plan.',
-      );
-    }
+  deleteOne(id: number, userId: number): Promise<void> {
+    return this.mealPlans.softDeleteOwned(id, userId);
+  }
+
+  // Only the Owner's own Meals may be planned; any other id is a 404
+  private async toMealPlanMeals(
+    mealIds: number[],
+    userId: number,
+  ): Promise<DeepPartial<MealPlanMeal>[]> {
+    await this.meals.findManyOwned(mealIds, userId);
+
+    return mealIds.map((mealId) => ({ meal: { id: mealId } }));
   }
 }

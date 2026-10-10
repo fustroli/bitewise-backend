@@ -1,20 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  ArrayMinSize,
-  IsArray,
-  IsNotEmpty,
-  IsNumber,
-  IsString,
-} from 'class-validator';
+import { ArrayMinSize, IsArray, IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateMealPlanDto {
-  @ApiProperty({
-    description: 'The ID of the user creating the meal plan',
-    example: 1,
-  })
-  @IsNumber()
-  userId: number;
-
   @ApiProperty({
     description: 'The name of the meal plan',
     example: 'Breakfast Meal Plan',
