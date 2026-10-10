@@ -50,7 +50,7 @@ src/
   modules/
     auth/                      # Session entity + SessionService (sign-up/in, refresh rotation, sign-out,
                                #   change-password), cookie helper, JWT/Google/Facebook strategies & guards
-    user/                      # User entity + nested personal-info/social-profiles/notifications entities
+    user/                      # User entity (Profile groups embedded), ProfileService: /users/me + avatar
     ingredient/                # Ingredient CRUD, owned by a user
     meal/                      # Meal CRUD, composed of ingredients (MealIngredient join entity)
     meal-plan/                 # Meal plan CRUD, composed of meals (MealPlanMeal join entity)
@@ -71,8 +71,9 @@ barrel per directory. Import from the barrel (`../entities/index.js`), not indiv
 
 ## Entity relationships
 
-- `User` → has many `Ingredient`, `Meal`, `MealPlan`; has one each of `PersonalInformation`,
-  `SocialProfiles`, `NotificationSettings` (eager-loaded, cascade: false)
+- `User` → has many `Ingredient`, `Meal`, `MealPlan`; `PersonalInformation`, `SocialProfiles`,
+  `NotificationSettings` are **embedded columns** on `user` (`@Column(() => X)`), not tables.
+  Email unique among non-deleted Users (`activeEmail`, ADR-0001); `userName` unique (case-insensitive)
 - `Meal` → has many `MealIngredient` (join entity linking `Meal` + `Ingredient`, with
   `quantity`); has many `MealPlanMeal`
 - `MealPlan` → has many `MealPlanMeal` (join entity linking `MealPlan` + `Meal`)
