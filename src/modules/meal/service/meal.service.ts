@@ -15,8 +15,11 @@ import { In, Repository } from 'typeorm';
 import { Ingredient } from '../../ingredient/entities/index.js';
 import { UserService } from '../../user/service/index.js';
 import { MEAL_RELATIONS } from '../constants/index.js';
-import { PaginationDto } from '../../../common/pagination/pagination.dto.js';
-import { createQueryObject } from '../../../common/pagination/helpers/index.js';
+import {
+  createQueryObject,
+  IPaginated,
+  PaginationDto,
+} from '../../../common/pagination/index.js';
 
 @Injectable()
 export class MealService {
@@ -48,7 +51,7 @@ export class MealService {
   async getAll(
     userId: number,
     paginationDto: PaginationDto,
-  ): Promise<{ data: Meal[]; count: number }> {
+  ): Promise<IPaginated<Meal>> {
     const { order, take, skip } = createQueryObject(paginationDto);
 
     const [data, count] = await this.repository.findAndCount({

@@ -57,6 +57,7 @@ export class User {
   @Column({ nullable: true })
   avatarUrl: string;
 
+  @Exclude()
   @Column({ nullable: true })
   googleId: string;
 
