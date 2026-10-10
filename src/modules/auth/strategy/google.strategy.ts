@@ -1,14 +1,15 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { Strategy, VerifyCallback, Profile } from 'passport-google-oauth20';
+import { Strategy, Profile } from 'passport-google-oauth20';
 import googleOauthConfig from '../config/google-oauth.config.js';
+import { ISocialProfile } from '../interfaces/index.js';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy) {
   constructor(
     @Inject(googleOauthConfig.KEY)
-    private readonly googleConfiguration: ConfigType<typeof googleOauthConfig>,
+    googleConfiguration: ConfigType<typeof googleOauthConfig>,
   ) {
     super({
       clientID: googleConfiguration.clientId,
@@ -18,17 +19,20 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(
-    accessToken: string,
-    refreshToken: string,
+  validate(
+    _accessToken: string,
+    _refreshToken: string,
     profile: Profile,
-    done: VerifyCallback,
-  ): Promise<void> {
-    const { emails, id } = profile;
-    const user = {
-      email: emails[0].value,
-      googleId: id,
+  ): ISocialProfile {
+    const email = profile.emails?.[0];
+    if (!email)
+      throw new UnauthorizedException('No email on the Google account');
+
+    return {
+      provider: 'google',
+      providerId: profile.id,
+      email: email.value,
+      emailVerified: email.verified === true,
     };
-    done(null, user);
   }
 }
