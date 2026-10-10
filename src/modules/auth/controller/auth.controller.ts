@@ -17,28 +17,25 @@ import {
 } from '../dto/index.js';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { SessionService } from '../services/index.js';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import { Response } from 'express';
-import {
-  FacebookAuthGuard,
-  GoogleAuthGuard,
-  JwtGuard,
-} from '../guard/index.js';
+import { FacebookAuthGuard, GoogleAuthGuard } from '../guard/index.js';
 import { config } from '../../../config/index.js';
-import {
-  BearerToken,
-  CurrentSessionId,
-  CurrentUser,
-} from '../decorators/index.js';
+import { BearerToken, CurrentUser, Public } from '../decorators/index.js';
+import { IAuthenticatedUser } from '../interfaces/index.js';
 import { clearSessionCookies, setSessionCookies } from '../cookies/index.js';
 
-@UseGuards(ThrottlerGuard)
+// Credential endpoints: 10 requests per minute per IP
+const CREDENTIAL_LIMIT = { default: { limit: 10, ttl: 60_000 } };
+
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly sessions: SessionService) {}
 
   @Post('signup')
+  @Public()
+  @Throttle(CREDENTIAL_LIMIT)
   @HttpCode(HttpStatus.CREATED)
   async signup(
     @Body() dto: CreateUserDto,
@@ -50,6 +47,8 @@ export class AuthController {
   }
 
   @Post('signin')
+  @Public()
+  @Throttle(CREDENTIAL_LIMIT)
   @HttpCode(HttpStatus.OK)
   async signin(
     @Body() dto: LoginUserDto,
@@ -60,7 +59,10 @@ export class AuthController {
     return user;
   }
 
+  // @Public: authenticated by the refresh token, not an access token
   @Post('refresh')
+  @Public()
+  @Throttle(CREDENTIAL_LIMIT)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   async refresh(
@@ -73,6 +75,7 @@ export class AuthController {
   }
 
   @Post('signout')
+  @Public()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth()
   async signout(
@@ -85,12 +88,14 @@ export class AuthController {
   }
 
   @Get('google/login')
+  @Public()
   @UseGuards(GoogleAuthGuard)
   async googleLogin() {
     // Initiates Google OAuth2 login
   }
 
   @Get('google/callback')
+  @Public()
   @UseGuards(GoogleAuthGuard)
   @Redirect()
   async googleLoginCallback(
@@ -103,12 +108,14 @@ export class AuthController {
   }
 
   @Get('facebook/login')
+  @Public()
   @UseGuards(FacebookAuthGuard)
   async facebookLogin() {
     // Initiates Facebook OAuth2 login
   }
 
   @Get('facebook/callback')
+  @Public()
   @UseGuards(FacebookAuthGuard)
   @Redirect()
   async facebookLoginCallback(
@@ -122,13 +129,10 @@ export class AuthController {
 
   @Post('change-password')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @UseGuards(JwtGuard)
-  @ApiBearerAuth()
   changePassword(
-    @CurrentUser('id') userId: number,
-    @CurrentSessionId() sid: string,
+    @CurrentUser() user: IAuthenticatedUser,
     @Body() dto: ChangePasswordDto,
   ) {
-    return this.sessions.changePassword(userId, sid, dto);
+    return this.sessions.changePassword(user.userId, user.sessionId, dto);
   }
 }

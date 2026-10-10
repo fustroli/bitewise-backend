@@ -9,11 +9,8 @@ import {
   Patch,
   Post,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { ThrottlerGuard } from '@nestjs/throttler';
-import { JwtGuard } from '../../auth/guard/index.js';
 import {
   CreateMealDto,
   MealResponseDto,
@@ -22,7 +19,7 @@ import {
 } from '../dto/index.js';
 import { MealService } from '../service/index.js';
 import { CurrentUser } from '../../auth/decorators/index.js';
-import { User } from '../../user/entities/index.js';
+import { IAuthenticatedUser } from '../../auth/interfaces/index.js';
 import { serializeMeal } from '../../meal/serializers/index.js';
 import {
   mapPaginated,
@@ -30,7 +27,6 @@ import {
 } from '../../../common/pagination/index.js';
 
 @ApiTags('meal')
-@UseGuards(JwtGuard, ThrottlerGuard)
 @Controller('meal')
 export class MealController {
   constructor(private readonly mealService: MealService) {}
@@ -38,20 +34,20 @@ export class MealController {
   @Get(':mealId')
   @ApiOkResponse({ type: MealResponseDto })
   async getOneMeal(
-    @CurrentUser() user: User,
+    @CurrentUser() user: IAuthenticatedUser,
     @Param('mealId') mealId: number,
   ): Promise<MealResponseDto> {
-    const meal = await this.mealService.getOne(mealId, user.id);
+    const meal = await this.mealService.getOne(mealId, user.userId);
     return serializeMeal(meal);
   }
 
   @Get()
   @ApiOkResponse({ type: PaginatedMealResponseDto })
   async getAllMeal(
-    @CurrentUser() user: User,
+    @CurrentUser() user: IAuthenticatedUser,
     @Query() paginationDto: PaginationDto,
   ): Promise<PaginatedMealResponseDto> {
-    const page = await this.mealService.getAll(user.id, paginationDto);
+    const page = await this.mealService.getAll(user.userId, paginationDto);
     return mapPaginated(page, serializeMeal);
   }
 
@@ -59,29 +55,29 @@ export class MealController {
   @ApiOkResponse({ type: MealResponseDto })
   async createMeal(
     @Body() dto: CreateMealDto,
-    @CurrentUser() user: User,
+    @CurrentUser() user: IAuthenticatedUser,
   ): Promise<MealResponseDto> {
-    const meal = await this.mealService.createOne(dto, user.id);
+    const meal = await this.mealService.createOne(dto, user.userId);
     return serializeMeal(meal);
   }
 
   @Patch(':mealId')
   @ApiOkResponse({ type: MealResponseDto })
   async updateMeal(
-    @CurrentUser() user: User,
+    @CurrentUser() user: IAuthenticatedUser,
     @Param('mealId') mealId: number,
     @Body() body: UpdateMealDto,
   ): Promise<MealResponseDto> {
-    const meal = await this.mealService.updateOne(mealId, body, user.id);
+    const meal = await this.mealService.updateOne(mealId, body, user.userId);
     return serializeMeal(meal);
   }
 
   @Delete(':mealId')
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteMeal(
-    @CurrentUser() user: User,
+    @CurrentUser() user: IAuthenticatedUser,
     @Param('mealId') mealId: number,
   ): Promise<void> {
-    return this.mealService.deleteOne(mealId, user.id);
+    return this.mealService.deleteOne(mealId, user.userId);
   }
 }

@@ -13,7 +13,11 @@ import {
   CreateUserDto,
   LoginUserDto,
 } from '../dto/index.js';
-import { IJwtClaims, ISocialProfile } from '../interfaces/index.js';
+import {
+  IAuthenticatedUser,
+  IJwtClaims,
+  ISocialProfile,
+} from '../interfaces/index.js';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { Session } from '../entities/index.js';
@@ -156,13 +160,17 @@ export class SessionService {
   }
 
   /**
-   * The User behind a verified access token's claims, or 401 if its Session
-   * has ended or the User is gone.
+   * The caller behind a verified access token's claims, or 401 if its
+   * Session has ended or the User is gone. Selects ids only.
    */
-  async authenticate(claims: IJwtClaims): Promise<User> {
-    const session = await this.findActive(claims);
+  async authenticate({ sub, sid }: IJwtClaims): Promise<IAuthenticatedUser> {
+    const session = await this.sessions.findOne({
+      where: { id: sid, user: { id: sub, deleteTimeStamp: IsNull() } },
+      relations: { user: true },
+      select: { id: true, user: { id: true } },
+    });
     if (!session) throw new UnauthorizedException();
-    return session.user;
+    return { userId: session.user.id, sessionId: session.id };
   }
 
   /** Verifies a refresh token's signature and expiry; 401 otherwise. */

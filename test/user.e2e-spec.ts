@@ -1,18 +1,13 @@
 import { ExecutionContext, HttpStatus, INestApplication } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 
-// @nestjs/throttler is CommonJS and require()s ESM @nestjs/common, which Jest's
-// VM modules can't do on Node 22. Throttling isn't under test, so stub it out.
-class ThrottlerGuard {
-  canActivate() {
-    return true;
-  }
-}
-jest.unstable_mockModule('@nestjs/throttler', () => ({ ThrottlerGuard }));
+import { mockThrottler } from './throttler.mock.js';
+
+mockThrottler();
 
 const { setupApp } = await import('../src/app.setup.js');
-const { JwtGuard } = await import('../src/modules/auth/guard/index.js');
 const { UserController } =
   await import('../src/modules/user/controller/index.js');
 const { stubUser, User } =
@@ -47,16 +42,21 @@ describe('User responses (e2e)', () => {
               Object.assign(user(), { avatarUrl: 'https://cdn/avatar.png' }),
           },
         },
-      ],
-    })
-      .overrideGuard(JwtGuard)
-      .useValue({
-        canActivate: (context: ExecutionContext) => {
-          context.switchToHttp().getRequest().user = user();
-          return true;
+        // Stands in for the global JwtGuard
+        {
+          provide: APP_GUARD,
+          useValue: {
+            canActivate: (context: ExecutionContext) => {
+              context.switchToHttp().getRequest().user = {
+                userId: 1,
+                sessionId: 'session-1',
+              };
+              return true;
+            },
+          },
         },
-      })
-      .compile();
+      ],
+    }).compile();
 
     app = moduleRef.createNestApplication();
     setupApp(app);

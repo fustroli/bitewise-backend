@@ -30,9 +30,10 @@ This is a pure ESM project (`package.json` has `"type": "module"`, `tsconfig.jso
   type (e.g. `user: Relation<User>`) to avoid a `ReferenceError: Cannot access 'X' before
   initialization` at runtime from `emitDecoratorMetadata` + circular imports. Every entity
   relation in this codebase is already wrapped this way — keep doing it for new relations.
-- **Every module that uses an `AuthGuard`-based guard must import `PassportModule.register({})`.**
+- **A module that uses an `AuthGuard`-based guard itself must import `PassportModule.register({})`.**
   `@nestjs/passport` no longer implicitly provides `AuthModuleOptions`; without this import
-  you'll get `UnknownDependenciesException` for the guard at boot.
+  you'll get `UnknownDependenciesException` for the guard at boot. Today that is only
+  `AuthModule`: `JwtGuard` is global, so feature modules import nothing for auth.
 - Jest runs in ESM mode. The global `jest` object is restored via `jest.setup.ts`
   (`setupFiles` in the jest config) — don't remove it or `jest.fn()`/`jest.spyOn()` will be
   undefined in spec files.
@@ -86,6 +87,11 @@ barrel per directory. Import from the barrel (`../entities/index.js`), not indiv
 ---
 
 ## Key Conventions
+
+- Auth: every route needs an access token by default (`JwtGuard` is `APP_GUARD` in `AuthModule`);
+  opt out with `@Public()`, and add the route to `PUBLIC_ROUTES` in `test/routes-auth.e2e-spec.ts`.
+  The caller is `IAuthenticatedUser { userId, sessionId }` via `@CurrentUser()` (no key argument).
+  Throttling is global; tighten per route with `@Throttle`, never `@UseGuards(ThrottlerGuard)`
 
 - Ownership: Owned resources (Ingredient, Meal, Meal plan) are accessed through
   `OwnedRepository<T>` (`src/common/ownership`), constructed in the service around the

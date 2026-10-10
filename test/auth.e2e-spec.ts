@@ -3,14 +3,9 @@ import { PassportModule } from '@nestjs/passport';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 
-// @nestjs/throttler is CommonJS and require()s ESM @nestjs/common, which Jest's
-// VM modules can't do on Node 22. Throttling isn't under test, so stub it out.
-class ThrottlerGuard {
-  canActivate() {
-    return true;
-  }
-}
-jest.unstable_mockModule('@nestjs/throttler', () => ({ ThrottlerGuard }));
+import { mockThrottler } from './throttler.mock.js';
+
+mockThrottler();
 
 const { setupApp } = await import('../src/app.setup.js');
 const { AuthController } =
