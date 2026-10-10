@@ -105,8 +105,4 @@ export class CreateIngredientDto {
   @IsEnum(EUnit)
   @ApiProperty({ enum: EUnit, enumName: 'EUnit', required: true })
   readonly unit: EUnit;
-
-  @IsNumber()
-  @ApiProperty({ example: 1, required: true })
-  readonly userId: number;
 }

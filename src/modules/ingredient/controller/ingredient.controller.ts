@@ -49,8 +49,9 @@ export class IngredientController {
   @ApiOkResponse({ type: IngredientResponseDto })
   async createIngredient(
     @Body() dto: CreateIngredientDto,
+    @CurrentUser() user: User,
   ): Promise<IngredientResponseDto> {
-    const ingredient = await this.ingredientService.createOne(dto);
+    const ingredient = await this.ingredientService.createOne(dto, user.id);
     return serializeIngredient(ingredient);
   }
 

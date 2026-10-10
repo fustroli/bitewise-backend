@@ -85,13 +85,20 @@ barrel per directory. Import from the barrel (`../entities/index.js`), not indiv
 
 ## Key Conventions
 
-- Ownership checks: services verify `entity.user.id === userId` before mutating/deleting
-  (see `checkMealOwner` in `meal.service.ts` for the pattern)
+- Ownership: Owned resources (Ingredient, Meal, Meal plan) are accessed through
+  `OwnedRepository<T>` (`src/common/ownership`), constructed in the service around the
+  injected repo. The Owner always comes from the JWT (`@CurrentUser()`), never the request
+  body; foreign and missing ids both 404. (Meal / Meal plan are still being migrated — #18.)
+- Per-Owner name uniqueness: `@ActiveNameColumn()` + a unique `@Index(activeNameIndexName(label),
+  ['user', 'activeName'])` on the entity (ADR-0001); the global `DuplicateEntryFilter` turns
+  `ER_DUP_ENTRY` into a 409
 - DTOs use `class-validator`/`class-transformer` decorators; `main.ts` has a global
   `ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true })`
 - Response shaping goes through `serializers/` (e.g. `meal.serializer.ts`,
   `meal-plan.serializer.ts`), not raw entity returns
-- Pagination: use `PaginationDto` + `createQueryObject()` from `src/common/pagination`
+- Pagination: `PaginationDto` in, `IPaginated<T>` out (`src/common/pagination`);
+  `OwnedRepository.listOwned` enforces a per-resource `sortable` whitelist (unknown `orderBy`
+  → 400), default limit 20, max 100. Controllers map pages with `mapPaginated`
 - Env config is read through `src/config/index.ts` (`config.TYPEORM.*`, `config.PORT`, etc.),
   not `process.env` directly
 
@@ -111,6 +118,7 @@ npm run start:prod
 npm run test                   # Unit tests (ESM, via --experimental-vm-modules)
 npm run test:cov               # Coverage report
 npm run test:e2e               # E2E tests
+npm run test:int               # Integration tests (*.int-spec.ts) — needs Docker (Testcontainers MySQL)
 
 # Lint / format
 npm run lint
