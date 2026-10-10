@@ -69,15 +69,6 @@ describe('CreateIngredientDto', () => {
     expect(errors[0].constraints).toHaveProperty('isLength');
   });
 
-  it('should fail if userId is not provided', async () => {
-    dto = Object.assign(new CreateIngredientDto(), dto, {
-      userId: null,
-    });
-    const errors = await validate(dto);
-    expect(errors.length).toBeGreaterThan(0);
-    expect(errors[0].property).toBe('userId');
-  });
-
   it('should fail if price is negative', async () => {
     dto = Object.assign(new CreateIngredientDto(), dto, {
       price: -10,

@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -16,14 +17,24 @@ import { EUnit } from '../enum/index.js';
 import { MealIngredient } from '../../meal/entities/index.js';
 import { User } from '../../user/entities/index.js';
 import { decimalTransformer } from '../../../common/transformers/index.js';
+import {
+  ActiveNameColumn,
+  activeNameIndexName,
+} from '../../../common/ownership/index.js';
 
 @Entity()
+@Index(activeNameIndexName('ingredient'), ['user', 'activeName'], {
+  unique: true,
+})
 export class Ingredient {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
   @Column()
   name: string;
+
+  @ActiveNameColumn()
+  activeName?: string | null;
 
   @Column({
     type: 'decimal',
