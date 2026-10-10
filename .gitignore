@@ -56,3 +56,6 @@ bitewise-storage-key.json
 
 # Claude
 .claude
+
+# Local seed script and test data
+/seed/
