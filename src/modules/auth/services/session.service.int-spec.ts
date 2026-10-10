@@ -9,7 +9,7 @@ import {
 import { config } from '../../../config/index.js';
 import { User } from '../../user/entities/index.js';
 import { Session } from '../entities/index.js';
-import { IJwtClaims } from '../interfaces/index.js';
+import { IJwtClaims, ISocialProfile } from '../interfaces/index.js';
 import { ISessionTokens, SessionService } from './session.service.js';
 
 const PASSWORD = 'StrongPassword1!';
@@ -251,6 +251,75 @@ describe('SessionService', () => {
       await expect(
         sessions.signIn({ email: user.email, password: PASSWORD }),
       ).resolves.toBeDefined();
+    });
+  });
+
+  describe('signInSocial', () => {
+    const google = (
+      email: string,
+      overrides: Partial<ISocialProfile> = {},
+    ): ISocialProfile => ({
+      provider: 'google',
+      providerId: randomUUID(),
+      email,
+      emailVerified: true,
+      ...overrides,
+    });
+
+    it('creates a new User for an unknown identity and email', async () => {
+      const profile = google(`${randomUUID()}@example.com`);
+
+      const { user, tokens } = await sessions.signInSocial(profile);
+
+      expect(user).toMatchObject({
+        email: profile.email,
+        googleId: profile.providerId,
+      });
+      await expect(authenticate(tokens)).resolves.toBeDefined();
+    });
+
+    it('signs a known identity in to the same User', async () => {
+      const profile = google(`${randomUUID()}@example.com`);
+      const { user } = await sessions.signInSocial(profile);
+
+      const again = await sessions.signInSocial(profile);
+
+      expect(again.user.id).toBe(user.id);
+    });
+
+    it('links a verified email to the existing User', async () => {
+      const { user } = await signUp();
+
+      const linked = await sessions.signInSocial(
+        google(user.email, { provider: 'facebook' }),
+      );
+
+      expect(linked.user.id).toBe(user.id);
+      expect(linked.user.facebookId).toBeDefined();
+      await expect(
+        sessions.signIn({ email: user.email, password: PASSWORD }),
+      ).resolves.toBeDefined();
+    });
+
+    it('rejects an unverified email that belongs to another User with 409', async () => {
+      const { user } = await signUp();
+
+      await expect(
+        sessions.signInSocial(google(user.email, { emailVerified: false })),
+      ).rejects.toThrow(ConflictException);
+      expect(
+        await dataSource.getRepository(User).findOneBy({ id: user.id }),
+      ).toMatchObject({ googleId: null });
+    });
+
+    it('creates a User for an unverified email nobody has', async () => {
+      const profile = google(`${randomUUID()}@example.com`, {
+        emailVerified: false,
+      });
+
+      await expect(sessions.signInSocial(profile)).resolves.toMatchObject({
+        user: { email: profile.email },
+      });
     });
   });
 

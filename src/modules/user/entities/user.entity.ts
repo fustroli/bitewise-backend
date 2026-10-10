@@ -57,6 +57,10 @@ export class User {
   @Column({ nullable: true })
   googleId: string;
 
+  @Exclude()
+  @Column({ nullable: true })
+  facebookId: string;
+
   @CreateDateColumn()
   createTimeStamp: Date;
 
