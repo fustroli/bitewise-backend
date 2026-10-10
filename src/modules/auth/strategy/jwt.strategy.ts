@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { IJwtClaims } from '../interfaces/index.js';
+import { IAuthenticatedUser, IJwtClaims } from '../interfaces/index.js';
 import { SessionService } from '../services/index.js';
 import { config } from '../../../config/index.js';
 
@@ -14,9 +14,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  // [user, authInfo]: the Session id reaches handlers via @CurrentSessionId()
-  async validate(claims: IJwtClaims) {
-    const user = await this.sessions.authenticate(claims);
-    return [user, { sid: claims.sid }];
+  validate(claims: IJwtClaims): Promise<IAuthenticatedUser> {
+    return this.sessions.authenticate(claims);
   }
 }

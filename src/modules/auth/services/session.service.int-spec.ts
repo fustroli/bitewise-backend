@@ -57,8 +57,9 @@ describe('SessionService', () => {
 
       expect(user.id).toBeDefined();
       expect(user.hash).not.toBe(PASSWORD);
-      await expect(authenticate(tokens)).resolves.toMatchObject({
-        id: user.id,
+      await expect(authenticate(tokens)).resolves.toEqual({
+        userId: user.id,
+        sessionId: claimsOf(tokens.accessToken).sid,
       });
     });
 

@@ -9,11 +9,8 @@ import {
   Patch,
   Post,
   Query,
-  UseGuards,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { JwtGuard } from '../../auth/guard/index.js';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { IngredientService } from '../service/index.js';
 import {
   CreateIngredientDto,
@@ -22,7 +19,7 @@ import {
   PaginatedIngredientDto,
 } from '../dto/index.js';
 import { CurrentUser } from '../../auth/decorators/index.js';
-import { User } from '../../user/entities/index.js';
+import { IAuthenticatedUser } from '../../auth/interfaces/index.js';
 import {
   mapPaginated,
   PaginationDto,
@@ -30,7 +27,6 @@ import {
 import { serializeIngredient } from '../serializers/index.js';
 
 @ApiTags('ingredient')
-@UseGuards(JwtGuard, ThrottlerGuard)
 @Controller('ingredient')
 export class IngredientController {
   constructor(private readonly ingredientService: IngredientService) {}
@@ -38,10 +34,13 @@ export class IngredientController {
   @Get()
   @ApiOkResponse({ type: PaginatedIngredientDto })
   async getAllIngredient(
-    @CurrentUser() user: User,
+    @CurrentUser() user: IAuthenticatedUser,
     @Query() paginationDto: PaginationDto,
   ): Promise<PaginatedIngredientDto> {
-    const page = await this.ingredientService.getAll(user.id, paginationDto);
+    const page = await this.ingredientService.getAll(
+      user.userId,
+      paginationDto,
+    );
     return mapPaginated(page, serializeIngredient);
   }
 
@@ -49,9 +48,9 @@ export class IngredientController {
   @ApiOkResponse({ type: IngredientResponseDto })
   async createIngredient(
     @Body() dto: CreateIngredientDto,
-    @CurrentUser() user: User,
+    @CurrentUser() user: IAuthenticatedUser,
   ): Promise<IngredientResponseDto> {
-    const ingredient = await this.ingredientService.createOne(dto, user.id);
+    const ingredient = await this.ingredientService.createOne(dto, user.userId);
     return serializeIngredient(ingredient);
   }
 
@@ -60,12 +59,12 @@ export class IngredientController {
   async updateIngredient(
     @Param('ingredientId') ingredientId: number,
     @Body() body: UpdateIngredientDto,
-    @CurrentUser() user: User,
+    @CurrentUser() user: IAuthenticatedUser,
   ): Promise<IngredientResponseDto> {
     const ingredient = await this.ingredientService.updateOne(
       ingredientId,
       body,
-      user.id,
+      user.userId,
     );
     return serializeIngredient(ingredient);
   }
@@ -74,8 +73,8 @@ export class IngredientController {
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteIngredient(
     @Param('ingredientId') ingredientId: number,
-    @CurrentUser() user: User,
+    @CurrentUser() user: IAuthenticatedUser,
   ): Promise<void> {
-    return this.ingredientService.deleteOne(ingredientId, user.id);
+    return this.ingredientService.deleteOne(ingredientId, user.userId);
   }
 }
