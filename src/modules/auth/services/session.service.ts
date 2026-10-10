@@ -13,8 +13,7 @@ import {
   CreateUserDto,
   LoginUserDto,
 } from '../dto/index.js';
-import { CreateSocialUserDto } from '../../user/dto/index.js';
-import { IJwtClaims } from '../interfaces/index.js';
+import { IJwtClaims, ISocialProfile } from '../interfaces/index.js';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { Session } from '../entities/index.js';
@@ -32,6 +31,11 @@ export interface ISessionResult {
   user: User;
   tokens: ISessionTokens;
 }
+
+const PROVIDER_ID_COLUMN = {
+  google: 'googleId',
+  facebook: 'facebookId',
+} as const satisfies Record<ISocialProfile['provider'], keyof User>;
 
 const INVALID_CREDENTIALS = 'Invalid email or password';
 const INVALID_REFRESH_TOKEN = 'Invalid refresh token';
@@ -75,15 +79,26 @@ export class SessionService {
     return { user, tokens: await this.start(user) };
   }
 
-  // Interim: link-by-email as before; reworked into signInSocial(provider, profile)
-  async signInSocial(socialUser: CreateSocialUserDto): Promise<ISessionResult> {
-    const existing = await this.users.findOneBy({ email: socialUser.email });
-    const user = await this.users.save(
-      Object.assign(existing ?? this.users.create(), {
-        email: socialUser.email,
-        googleId: socialUser.googleId ?? existing?.googleId,
-      }),
-    );
+  /**
+   * Signs in with a provider identity. An unknown identity whose email
+   * belongs to an existing User is linked to it only if the provider has
+   * verified that email; otherwise a new User is created.
+   */
+  async signInSocial(profile: ISocialProfile): Promise<ISessionResult> {
+    const column = PROVIDER_ID_COLUMN[profile.provider];
+
+    let user = await this.users.findOneBy({ [column]: profile.providerId });
+    if (!user) {
+      const owner = await this.users.findOneBy({ email: profile.email });
+      if (owner && !profile.emailVerified)
+        throw new ConflictException('Sign in with your password first');
+
+      user = await this.users.save(
+        Object.assign(owner ?? this.users.create({ email: profile.email }), {
+          [column]: profile.providerId,
+        }),
+      );
+    }
 
     return { user, tokens: await this.start(user) };
   }
