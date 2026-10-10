@@ -6,7 +6,8 @@ NestJS REST API backend for BiteWise, a meal/ingredient tracking platform.
 
 - **Framework**: NestJS 12 (ESM — `"type": "module"`, TypeScript, Node.js 20+)
 - **ORM**: TypeORM 1.1 with MySQL (`mysql2`)
-- **Auth**: JWT (access + refresh, cookie-based) + Passport (email/password, Google OAuth, Facebook OAuth)
+- **Auth**: per-device Sessions (`SessionService`); JWT access + refresh tokens carrying `sid`, issued as
+  httpOnly cookies but accepted only as `Bearer`; Passport (email/password, Google OAuth, Facebook OAuth)
 - **Storage**: Google Cloud Storage (`@google-cloud/storage`) — used for avatar uploads
 - **API Docs**: Swagger (`@nestjs/swagger`) at `/api/docs`; all routes use global prefix `/api`
 - **Health checks**: `@nestjs/terminus` (`GET /api/health` liveness, `GET /api/health/ready` readiness w/ DB check)
@@ -47,8 +48,8 @@ src/
     transformers/              # TypeORM column transformers (e.g. decimalTransformer)
   config/                      # Env-driven app config (src/config/index.ts)
   modules/
-    auth/                      # Signup/signin, JWT strategy, Google/Facebook OAuth strategies & guards
-    token/                     # Access/refresh token issuance, cookie handling
+    auth/                      # Session entity + SessionService (sign-up/in, refresh rotation, sign-out,
+                               #   change-password), cookie helper, JWT/Google/Facebook strategies & guards
     user/                      # User entity + nested personal-info/social-profiles/notifications entities
     ingredient/                # Ingredient CRUD, owned by a user
     meal/                      # Meal CRUD, composed of ingredients (MealIngredient join entity)
