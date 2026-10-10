@@ -88,7 +88,8 @@ barrel per directory. Import from the barrel (`../entities/index.js`), not indiv
 - Ownership: Owned resources (Ingredient, Meal, Meal plan) are accessed through
   `OwnedRepository<T>` (`src/common/ownership`), constructed in the service around the
   injected repo. The Owner always comes from the JWT (`@CurrentUser()`), never the request
-  body; foreign and missing ids both 404. (Meal / Meal plan are still being migrated — #18.)
+  body; foreign and missing ids both 404. Referenced Owned resources (a Meal's Ingredients,
+  a Meal plan's Meals) are resolved with `findManyOwned`, never a raw repo lookup.
 - Per-Owner name uniqueness: `@ActiveNameColumn()` + a unique `@Index(activeNameIndexName(label),
   ['user', 'activeName'])` on the entity (ADR-0001); the global `DuplicateEntryFilter` turns
   `ER_DUP_ENTRY` into a 409

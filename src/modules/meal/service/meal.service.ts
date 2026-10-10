@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, In, Repository } from 'typeorm';
+import { DeepPartial, Repository } from 'typeorm';
 import {
   CreateMealDto,
   IngredientQuantityDto,
@@ -81,13 +81,6 @@ export class MealService {
 
   deleteOne(id: number, userId: number): Promise<void> {
     return this.meals.softDeleteOwned(id, userId);
-  }
-
-  async findMealsByIds(userId: number, ids: number[]): Promise<Meal[]> {
-    return this.repository.find({
-      where: { id: In(ids), user: { id: userId } },
-      relations: MEAL_RELATIONS,
-    });
   }
 
   // Only the Owner's own Ingredients may be used; any other id is a 404

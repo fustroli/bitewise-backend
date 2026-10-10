@@ -12,7 +12,7 @@ describe('CreateMealPlanDto', () => {
 
   it('should validate a valid DTO', async () => {
     dto = Object.assign(new CreateMealPlanDto(), {
-      userId: stubMealPlan().userId,
+      name: 'Breakfast Meal Plan',
       mealIds: [1, 2],
     });
 
