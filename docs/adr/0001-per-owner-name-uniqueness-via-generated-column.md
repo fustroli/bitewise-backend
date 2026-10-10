@@ -12,4 +12,6 @@ Owned resources (Ingredient, Meal, Meal plan) must have unique names among their
 - **Unique index on `(user_id, name, deleteTimeStamp)`**: active rows all have NULL `deleteTimeStamp`, and NULLs are distinct, so active duplicates slip through.
 - **App-level check-then-insert** (the previous approach): races under concurrent writes and must be repeated on every write path. Remains the fallback if TypeORM `synchronize` can't keep the generated column stable (it has a history of re-diffing generated columns); an integration test guards this.
 
+The same pattern enforces User sign-in email uniqueness (`activeEmail`), so a deleted account's email can sign up again.
+
 See fustroli/bitewise-backend#18.

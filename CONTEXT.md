@@ -6,6 +6,17 @@ Meal and ingredient tracking: users build Ingredients, compose them into Meals, 
 
 ### Identity
 
+**User**:
+A person with a BiteWise account, identified by their sign-in email, which is unique among non-deleted Users. Deleting the account erases their Profile; the email may then sign up again as a new User.
+_Avoid_: Account (for the person), member
+
+**Profile**:
+What a User says about themselves: personal information, social profiles, avatar, and Notification settings. Never includes sign-in credentials.
+_Avoid_: Settings (for the whole page), user details
+
+**Notification settings**:
+Which kinds of email a User receives, and the default email address they are sent to (the sign-in email unless changed).
+
 **Session**:
 The period during which a User is signed in on one device. It starts at sign-in and ends at sign-out, account deletion, or when its refresh token is rejected; a User may have several Sessions at once.
 _Avoid_: Login (as a noun), auth, token
@@ -26,7 +37,13 @@ _Avoid_: user resource, private entity
 A food item with nutritional values, defined by its Owner.
 
 **Meal**:
-A named set of Ingredients, each with a quantity. A Meal may only use Ingredients with the same Owner.
+A named combination of Meal ingredients. A Meal may only use Ingredients with the same Owner.
+_Avoid_: Dish
+
+**Meal ingredient**:
+An Ingredient used in a Meal, together with a quantity.
+_Avoid_: Line item, component
 
 **Meal plan**:
-A named set of Meals. A Meal plan may only contain Meals with the same Owner.
+A named set of distinct Meals. A Meal plan may only contain Meals with the same Owner.
+_Avoid_: Diet, schedule
