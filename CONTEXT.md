@@ -34,10 +34,10 @@ _Avoid_: user resource, private entity
 ### Composition
 
 **Ingredient**:
-A food item with nutritional values, defined by its Owner.
+A food item with nutritional values, defined by its Owner. Cannot be deleted while any Meal uses it.
 
 **Meal**:
-A named combination of Meal ingredients. A Meal may only use Ingredients with the same Owner.
+A named combination of one or more Meal ingredients, each for a distinct Ingredient with the same Owner. Cannot be deleted while any Meal plan contains it.
 _Avoid_: Dish
 
 **Meal ingredient**:
@@ -45,5 +45,5 @@ An Ingredient used in a Meal, together with a quantity.
 _Avoid_: Line item, component
 
 **Meal plan**:
-A named set of distinct Meals. A Meal plan may only contain Meals with the same Owner.
+A named set of one or more distinct Meals with the same Owner.
 _Avoid_: Diet, schedule
