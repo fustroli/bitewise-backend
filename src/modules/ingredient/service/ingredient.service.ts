@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateIngredientDto, UpdateIngredientDto } from '../dto/index.js';
 import { Ingredient } from '../entities/index.js';
+import { Meal } from '../../meal/entities/index.js';
 import { Repository } from 'typeorm';
 import { IPaginated, PaginationDto } from '../../../common/pagination/index.js';
 import { OwnedRepository } from '../../../common/ownership/index.js';
@@ -54,7 +55,21 @@ export class IngredientService {
     return this.repository.save(this.repository.merge(ingredient, data));
   }
 
+  /** 409 while any Meal uses the Ingredient. */
   deleteOne(id: number, userId: number): Promise<void> {
-    return this.ingredients.softDeleteOwned(id, userId);
+    return this.repository.manager.transaction(async (manager) => {
+      await this.ingredients.findOwnedOrFail(id, userId);
+
+      const meals = await manager.find(Meal, {
+        where: { mealIngredients: { ingredient: { id } } },
+        select: { id: true, name: true },
+      });
+      if (meals.length)
+        throw new ConflictException(
+          `This ingredient is used in meals: ${meals.map((m) => m.name).join(', ')}.`,
+        );
+
+      await manager.softDelete(Ingredient, id);
+    });
   }
 }

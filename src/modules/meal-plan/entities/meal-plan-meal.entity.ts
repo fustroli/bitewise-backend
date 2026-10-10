@@ -1,5 +1,6 @@
 import {
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -8,13 +9,19 @@ import {
 import { Meal } from '../../meal/entities/index.js';
 import { MealPlan } from '../../meal-plan/entities/index.js';
 
+// A Meal appears at most once per Meal plan
 @Entity()
+@Index('UQ_meal_plan_meal_meal_plan_meal', ['mealPlan', 'meal'], {
+  unique: true,
+})
 export class MealPlanMeal {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
+  // Rows dropped from MealPlan.mealPlanMeals on save are deleted, not nullified
   @ManyToOne(() => MealPlan, (mealPlan) => mealPlan.mealPlanMeals, {
     onDelete: 'CASCADE',
+    orphanedRowAction: 'delete',
   })
   @JoinColumn({ name: 'mealPlanId' })
   mealPlan: Relation<MealPlan>;

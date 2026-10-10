@@ -1,5 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ArrayMinSize, IsArray, IsNotEmpty, IsString } from 'class-validator';
+import {
+  ArrayMinSize,
+  ArrayUnique,
+  IsArray,
+  IsInt,
+  IsNotEmpty,
+  IsString,
+} from 'class-validator';
 
 export class CreateMealPlanDto {
   @ApiProperty({
@@ -12,10 +19,13 @@ export class CreateMealPlanDto {
   name: string;
 
   @ApiProperty({
-    description: 'Array of meal IDs to be associated with the meal plan',
+    description: 'Distinct ids of the Meals in the meal plan',
+    type: [Number],
     required: true,
   })
   @IsArray()
-  @ArrayMinSize(1)
+  @ArrayMinSize(1, { message: 'Meal plan must have at least one meal' })
+  @ArrayUnique({ message: 'Each meal may appear only once in a meal plan' })
+  @IsInt({ each: true })
   mealIds: number[];
 }

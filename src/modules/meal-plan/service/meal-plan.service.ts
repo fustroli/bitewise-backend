@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DeepPartial, Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { MealPlan, MealPlanMeal } from '../entities/index.js';
 import { CreateMealPlanDto, UpdateMealPlanDto } from '../dto/index.js';
 import { Meal } from '../../meal/entities/index.js';
@@ -8,28 +8,30 @@ import { MEAL_PLAN_RELATIONS } from '../constants/index.js';
 import { IPaginated, PaginationDto } from '../../../common/pagination/index.js';
 import { OwnedRepository } from '../../../common/ownership/index.js';
 
+// Owner-scoped repositories bound to one EntityManager (a transaction's, or the default)
+function ownedIn(manager: EntityManager) {
+  return {
+    mealPlans: new OwnedRepository(manager.getRepository(MealPlan), {
+      label: 'meal plan',
+      relations: MEAL_PLAN_RELATIONS,
+      sortable: ['name', 'createTimeStamp', 'updateTimeStamp'],
+    }),
+    meals: new OwnedRepository(manager.getRepository(Meal), {
+      label: 'meal',
+      sortable: [],
+    }),
+  };
+}
+
 @Injectable()
 export class MealPlanService {
   private readonly mealPlans: OwnedRepository<MealPlan>;
-  private readonly meals: OwnedRepository<Meal>;
 
   constructor(
     @InjectRepository(MealPlan)
     private readonly repository: Repository<MealPlan>,
-    @InjectRepository(Meal)
-    mealRepository: Repository<Meal>,
-    @InjectRepository(MealPlanMeal)
-    private readonly mealPlanMealRepository: Repository<MealPlanMeal>,
   ) {
-    this.mealPlans = new OwnedRepository(repository, {
-      label: 'meal plan',
-      relations: MEAL_PLAN_RELATIONS,
-      sortable: ['name', 'createTimeStamp', 'updateTimeStamp'],
-    });
-    this.meals = new OwnedRepository(mealRepository, {
-      label: 'meal',
-      sortable: [],
-    });
+    this.mealPlans = ownedIn(repository.manager).mealPlans;
   }
 
   getOne(mealPlanId: number, userId: number): Promise<MealPlan> {
@@ -43,46 +45,77 @@ export class MealPlanService {
     return this.mealPlans.listOwned(userId, paginationDto);
   }
 
-  async createOne(data: CreateMealPlanDto, userId: number): Promise<MealPlan> {
-    const mealPlanMeals = await this.toMealPlanMeals(data.mealIds, userId);
+  createOne(data: CreateMealPlanDto, userId: number): Promise<MealPlan> {
+    return this.repository.manager.transaction(async (manager) => {
+      const { mealPlans, meals } = ownedIn(manager);
+      const mealPlanMeals = await this.compose(
+        manager,
+        meals,
+        [],
+        data.mealIds,
+        userId,
+      );
 
-    return this.mealPlans.createOwned(
-      { name: data.name, mealPlanMeals },
-      userId,
-    );
+      return mealPlans.createOwned({ name: data.name, mealPlanMeals }, userId);
+    });
   }
 
-  async updateOne(
+  updateOne(
     id: number,
     data: UpdateMealPlanDto,
     userId: number,
   ): Promise<MealPlan> {
-    const mealPlan = await this.mealPlans.findOwnedOrFail(id, userId, {});
+    return this.repository.manager.transaction(async (manager) => {
+      const { mealPlans, meals } = ownedIn(manager);
+      const mealPlan = await mealPlans.findOwnedOrFail(id, userId, {
+        mealPlanMeals: { meal: true },
+      });
 
-    if (data.name !== undefined) mealPlan.name = data.name;
+      if (data.name !== undefined) mealPlan.name = data.name;
+      if (data.mealIds)
+        mealPlan.mealPlanMeals = await this.compose(
+          manager,
+          meals,
+          mealPlan.mealPlanMeals,
+          data.mealIds,
+          userId,
+        );
 
-    if (data.mealIds) {
-      const mealPlanMeals = await this.toMealPlanMeals(data.mealIds, userId);
-      await this.mealPlanMealRepository.delete({ mealPlan: { id } });
-      mealPlan.mealPlanMeals = mealPlanMeals as MealPlanMeal[];
-    }
-
-    await this.repository.save(mealPlan);
-
-    return this.mealPlans.findOwnedOrFail(id, userId);
+      await manager.save(mealPlan);
+      return mealPlans.findOwnedOrFail(id, userId);
+    });
   }
 
   deleteOne(id: number, userId: number): Promise<void> {
     return this.mealPlans.softDeleteOwned(id, userId);
   }
 
-  // Only the Owner's own Meals may be planned; any other id is a 404
-  private async toMealPlanMeals(
+  /**
+   * The Meal plan's new set of Meals: distinct, owned Meals (any other id is
+   * a 404). Rows for Meals already in the plan are reused; rows left out are
+   * deleted on save (orphanedRowAction).
+   */
+  private async compose(
+    manager: EntityManager,
+    meals: OwnedRepository<Meal>,
+    current: MealPlanMeal[],
     mealIds: number[],
     userId: number,
-  ): Promise<DeepPartial<MealPlanMeal>[]> {
-    await this.meals.findManyOwned(mealIds, userId);
+  ): Promise<MealPlanMeal[]> {
+    if (new Set(mealIds).size !== mealIds.length)
+      throw new BadRequestException(
+        'Each meal may appear only once in a meal plan',
+      );
 
-    return mealIds.map((mealId) => ({ meal: { id: mealId } }));
+    await meals.findManyOwned(mealIds, userId);
+
+    const existing = new Map(
+      current.map((row) => [row.meal?.id, row] as const),
+    );
+    return mealIds.map(
+      (mealId) =>
+        existing.get(mealId) ??
+        manager.create(MealPlanMeal, { meal: { id: mealId } }),
+    );
   }
 }
