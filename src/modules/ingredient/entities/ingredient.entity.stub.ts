@@ -16,7 +16,6 @@ export function stubIngredient(override: Partial<Ingredient> = {}): Ingredient {
     mealIngredients: [],
     user: stubUser(),
     userId: stubUser().id,
-    price: 15,
     unit: EUnit.HUNDRED_GRAMS,
     createTimeStamp: new Date(),
     updateTimeStamp: new Date(),

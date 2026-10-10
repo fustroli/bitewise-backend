@@ -27,7 +27,6 @@ export function serializeMealIngredient(
     sugar: mealIngredient?.ingredient?.sugar,
     dietaryFiber: mealIngredient?.ingredient?.dietaryFiber,
     calories: mealIngredient?.ingredient?.calories,
-    price: mealIngredient?.ingredient?.price,
     unit: mealIngredient?.ingredient?.unit,
   };
 }

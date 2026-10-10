@@ -26,7 +26,6 @@ export class IngredientService {
         'sugar',
         'dietaryFiber',
         'calories',
-        'price',
         'unit',
         'createTimeStamp',
         'updateTimeStamp',

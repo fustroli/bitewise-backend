@@ -91,16 +91,6 @@ export class CreateIngredientDto {
   })
   readonly calories: number;
 
-  @IsNumber()
-  @IsNotEmpty()
-  @Min(0)
-  @ApiProperty({
-    example: 50,
-    description: 'Price',
-    required: true,
-  })
-  readonly price: number;
-
   @IsNotEmpty()
   @IsEnum(EUnit)
   @ApiProperty({ enum: EUnit, enumName: 'EUnit', required: true })

@@ -12,6 +12,5 @@ export class MealIngredientResponseDto {
   sugar: number;
   dietaryFiber: number;
   calories: number;
-  price: number;
   unit: EUnit;
 }
