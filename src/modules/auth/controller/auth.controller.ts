@@ -1,5 +1,6 @@
 import {
   Body,
+  ConflictException,
   Controller,
   Get,
   HttpCode,
@@ -22,7 +23,7 @@ import { Response } from 'express';
 import { FacebookAuthGuard, GoogleAuthGuard } from '../guard/index.js';
 import { config } from '../../../config/index.js';
 import { BearerToken, CurrentUser, Public } from '../decorators/index.js';
-import { IAuthenticatedUser } from '../interfaces/index.js';
+import { IAuthenticatedUser, ISocialProfile } from '../interfaces/index.js';
 import { clearSessionCookies, setSessionCookies } from '../cookies/index.js';
 
 // Credential endpoints: 10 requests per minute per IP
@@ -102,9 +103,7 @@ export class AuthController {
     @Req() req,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { tokens } = await this.sessions.signInSocial(req.user);
-    setSessionCookies(res, tokens);
-    return { url: `${config.FRONTEND_URL}/dashboard` };
+    return this.socialCallback(req.user, res);
   }
 
   @Get('facebook/login')
@@ -122,9 +121,7 @@ export class AuthController {
     @Req() req,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { tokens } = await this.sessions.signInSocial(req.user);
-    setSessionCookies(res, tokens);
-    return { url: `${config.FRONTEND_URL}/dashboard` };
+    return this.socialCallback(req.user, res);
   }
 
   @Post('change-password')
@@ -134,5 +131,18 @@ export class AuthController {
     @Body() dto: ChangePasswordDto,
   ) {
     return this.sessions.changePassword(user.userId, user.sessionId, dto);
+  }
+
+  // A browser navigation: a known refusal lands on the frontend, not a JSON page
+  private async socialCallback(profile: ISocialProfile, res: Response) {
+    try {
+      const { tokens } = await this.sessions.signInSocial(profile);
+      setSessionCookies(res, tokens);
+      return { url: `${config.FRONTEND_URL}/dashboard` };
+    } catch (error) {
+      if (error instanceof ConflictException)
+        return { url: `${config.FRONTEND_URL}/?error=password-first` };
+      throw error;
+    }
   }
 }
