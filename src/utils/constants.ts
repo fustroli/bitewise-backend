@@ -1,2 +1,2 @@
 export const MIN_LENGTH = 2;
-export const MAX_LENGTH = 31;
+export const MAX_LENGTH = 255;

@@ -6,7 +6,9 @@ import {
   IsInt,
   IsNotEmpty,
   IsString,
+  Length,
 } from 'class-validator';
+import { MAX_LENGTH, MIN_LENGTH } from '../../../utils/constants.js';
 
 export class CreateMealPlanDto {
   @ApiProperty({
@@ -16,6 +18,9 @@ export class CreateMealPlanDto {
   })
   @IsString()
   @IsNotEmpty()
+  @Length(MIN_LENGTH, MAX_LENGTH, {
+    message: `Name must be between ${MIN_LENGTH} and ${MAX_LENGTH} characters`,
+  })
   name: string;
 
   @ApiProperty({
