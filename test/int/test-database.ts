@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { DataSource, DataSourceOptions } from 'typeorm';
+import { Session } from '../../src/modules/auth/entities/index.js';
 import { Ingredient } from '../../src/modules/ingredient/entities/index.js';
 import { Meal, MealIngredient } from '../../src/modules/meal/entities/index.js';
 import {
@@ -24,6 +25,7 @@ const entities = [
   MealIngredient,
   MealPlan,
   MealPlanMeal,
+  Session,
 ];
 
 function options(database?: string): DataSourceOptions {

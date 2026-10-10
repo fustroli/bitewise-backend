@@ -6,6 +6,12 @@ export const config: IConfig = {
   COOKIE_DOMAIN: process.env.COOKIE_DOMAIN,
   SALT_WORK_FACTOR: +process.env.SALT_WORK_FACTOR,
   NODE_ENV: process.env.NODE_ENV,
+  JWT: {
+    ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET,
+    ACCESS_TOKEN_EXPIRATION: process.env.ACCESS_TOKEN_EXPIRATION,
+    REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET,
+    REFRESH_TOKEN_EXPIRATION: process.env.REFRESH_TOKEN_EXPIRATION,
+  },
   THROTTLER: {
     LIMIT: +process.env.THROTTLER_LIMIT,
     TTL: +process.env.THROTTLER_TTL,
@@ -45,6 +51,13 @@ export interface IConfig {
   COOKIE_DOMAIN?: string;
   SALT_WORK_FACTOR: number;
   NODE_ENV: string;
+  JWT: {
+    ACCESS_TOKEN_SECRET: string;
+    // Durations like "1h" / "7d" (ms / parse-duration format)
+    ACCESS_TOKEN_EXPIRATION: string;
+    REFRESH_TOKEN_SECRET: string;
+    REFRESH_TOKEN_EXPIRATION: string;
+  };
   THROTTLER: {
     LIMIT: number;
     TTL: number;

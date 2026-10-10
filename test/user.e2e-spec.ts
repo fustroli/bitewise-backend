@@ -19,7 +19,7 @@ const { stubUser, User } =
   await import('../src/modules/user/entities/index.js');
 const { UserService } = await import('../src/modules/user/service/index.js');
 
-const credentials = ['hash', 'refreshToken', 'googleId'];
+const credentials = ['hash', 'googleId'];
 
 describe('User responses (e2e)', () => {
   let app: INestApplication;
@@ -29,7 +29,6 @@ describe('User responses (e2e)', () => {
       new User(),
       stubUser({
         hash: 'secret-hash',
-        refreshToken: 'secret-refresh-token',
         googleId: 'google-123',
       }),
     );
