@@ -92,14 +92,6 @@ export class Ingredient {
   })
   calories: number;
 
-  @Column({
-    type: 'decimal',
-    precision: 10,
-    scale: 2,
-    transformer: decimalTransformer,
-  })
-  price: number;
-
   @Column({ type: 'enum', enum: EUnit, enumName: 'EUnit' })
   unit: EUnit;
 

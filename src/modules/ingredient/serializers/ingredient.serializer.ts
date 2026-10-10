@@ -14,7 +14,6 @@ export function serializeIngredient(
     sugar: ingredient.sugar,
     dietaryFiber: ingredient.dietaryFiber,
     calories: ingredient.calories,
-    price: ingredient.price,
     unit: ingredient.unit,
     userId: ingredient.userId,
     createTimeStamp: ingredient.createTimeStamp,

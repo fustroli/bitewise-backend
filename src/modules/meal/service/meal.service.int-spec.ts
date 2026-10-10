@@ -38,7 +38,6 @@ describe('MealService', () => {
       sugar: 0,
       dietaryFiber: 0,
       calories: 10,
-      price: 1,
       unit: EUnit.HUNDRED_GRAMS,
       user: { id: user.id },
     });

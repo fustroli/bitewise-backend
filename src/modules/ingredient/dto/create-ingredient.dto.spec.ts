@@ -69,15 +69,6 @@ describe('CreateIngredientDto', () => {
     expect(errors[0].constraints).toHaveProperty('isLength');
   });
 
-  it('should fail if price is negative', async () => {
-    dto = Object.assign(new CreateIngredientDto(), dto, {
-      price: -10,
-    });
-    const errors = await validate(dto);
-    expect(errors.length).toBeGreaterThan(0);
-    expect(errors[0].property).toBe('price');
-  });
-
   it('should fail if unit is not a proper enum value', async () => {
     dto = Object.assign(new CreateIngredientDto(), dto, {
       unit: '200g',
@@ -85,12 +76,5 @@ describe('CreateIngredientDto', () => {
     const errors = await validate(dto);
     expect(errors.length).toBeGreaterThan(0);
     expect(errors[0].property).toBe('unit');
-  });
-
-  it('should fail if price is negative', async () => {
-    dto = Object.assign(new CreateIngredientDto(), dto, { price: -14 });
-    const errors = await validate(dto);
-    expect(errors.length).toBeGreaterThan(0);
-    expect(errors[0].property).toBe('price');
   });
 });

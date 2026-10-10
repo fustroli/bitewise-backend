@@ -32,7 +32,6 @@ const ingredient = (name: string) => ({
   sugar: 0,
   dietaryFiber: 0,
   calories: 10,
-  price: 1,
   unit: EUnit.HUNDRED_GRAMS,
 });
 
@@ -170,7 +169,7 @@ describe('OwnedRepository', () => {
 
     it('400s for a column outside the sort whitelist', async () => {
       await expect(
-        ingredients.listOwned(owner.id, { orderBy: 'price' }),
+        ingredients.listOwned(owner.id, { orderBy: 'protein' }),
       ).rejects.toThrow(BadRequestException);
       await expect(
         ingredients.listOwned(owner.id, { orderBy: 'notAColumn' }),

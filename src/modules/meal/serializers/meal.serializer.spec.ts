@@ -23,7 +23,6 @@ describe('serializeMeal', () => {
           sugar: ingredient.sugar,
           dietaryFiber: ingredient.dietaryFiber,
           calories: ingredient.calories,
-          price: ingredient.price,
           unit: ingredient.unit,
         },
       ],

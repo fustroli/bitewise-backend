@@ -32,9 +32,6 @@ export class IngredientResponseDto {
   @ApiProperty({ example: 52, description: 'Calories content' })
   calories: number;
 
-  @ApiProperty({ example: 50, description: 'Price' })
-  price: number;
-
   @ApiProperty({ enum: EUnit, enumName: 'EUnit' })
   unit: EUnit;
 
