@@ -1,4 +1,5 @@
 import { validate } from 'class-validator';
+import { MAX_LENGTH } from '../../../utils/constants.js';
 import { stubMealPlan } from '../entities/index.js';
 import { CreateMealPlanDto } from './create-meal-plan.dto.js';
 
@@ -19,6 +20,36 @@ describe('CreateMealPlanDto', () => {
     const errors = await validate(dto);
 
     expect(errors.length).toBe(0);
+  });
+
+  it('should fail if name length is below minimum', async () => {
+    dto = Object.assign(new CreateMealPlanDto(), {
+      name: 'A',
+      mealIds: [1],
+    });
+
+    const errors = await validate(dto);
+    expect(errors[0].constraints).toHaveProperty('isLength');
+  });
+
+  it('should accept a name of maximum length', async () => {
+    dto = Object.assign(new CreateMealPlanDto(), {
+      name: 'A'.repeat(MAX_LENGTH),
+      mealIds: [1],
+    });
+
+    const errors = await validate(dto);
+    expect(errors.length).toBe(0);
+  });
+
+  it('should fail if name length exceeds maximum', async () => {
+    dto = Object.assign(new CreateMealPlanDto(), {
+      name: 'A'.repeat(MAX_LENGTH + 1),
+      mealIds: [1],
+    });
+
+    const errors = await validate(dto);
+    expect(errors[0].constraints).toHaveProperty('isLength');
   });
 
   it('should fail if the meals array is empty', async () => {

@@ -1,4 +1,5 @@
 import { validate } from 'class-validator';
+import { MAX_LENGTH } from '../../../utils/constants.js';
 import { stubMeal } from '../entities/index.js';
 import { CreateMealDto } from './create-meal.dto.js';
 import { plainToInstance } from 'class-transformer';
@@ -34,9 +35,19 @@ describe('CreateMealDto', () => {
     expect(errors[0].constraints).toHaveProperty('isLength');
   });
 
+  it('should accept a name of maximum length', async () => {
+    dto = plainToInstance(CreateMealDto, {
+      name: 'A'.repeat(MAX_LENGTH),
+      mealIngredients: [{ ingredientId: 1, quantity: 1 }],
+    });
+
+    const errors = await validate(dto);
+    expect(errors.length).toBe(0);
+  });
+
   it('should fail if name length exceeds maximum', async () => {
     dto = Object.assign(new CreateMealDto(), dto, {
-      name: 'A'.repeat(101),
+      name: 'A'.repeat(MAX_LENGTH + 1),
     });
 
     const errors = await validate(dto);
