@@ -23,8 +23,11 @@ import {
 } from '../dto/index.js';
 import { CurrentUser } from '../../auth/decorators/index.js';
 import { User } from '../../user/entities/index.js';
-import { plainToClass } from 'class-transformer';
-import { PaginationDto } from '../../../common/pagination/pagination.dto.js';
+import {
+  mapPaginated,
+  PaginationDto,
+} from '../../../common/pagination/index.js';
+import { serializeIngredient } from '../serializers/index.js';
 
 @ApiTags('ingredient')
 @UseGuards(JwtGuard, ThrottlerGuard)
@@ -34,11 +37,12 @@ export class IngredientController {
 
   @Get()
   @ApiOkResponse({ type: PaginatedIngredientDto })
-  getAllIngredient(
+  async getAllIngredient(
     @CurrentUser() user: User,
     @Query() paginationDto: PaginationDto,
   ): Promise<PaginatedIngredientDto> {
-    return this.ingredientService.getAll(user.id, paginationDto);
+    const page = await this.ingredientService.getAll(user.id, paginationDto);
+    return mapPaginated(page, serializeIngredient);
   }
 
   @Post()
@@ -47,7 +51,7 @@ export class IngredientController {
     @Body() dto: CreateIngredientDto,
   ): Promise<IngredientResponseDto> {
     const ingredient = await this.ingredientService.createOne(dto);
-    return plainToClass(IngredientResponseDto, ingredient);
+    return serializeIngredient(ingredient);
   }
 
   @Patch(':ingredientId')
@@ -62,7 +66,7 @@ export class IngredientController {
       body,
       user.id,
     );
-    return plainToClass(IngredientResponseDto, ingredient);
+    return serializeIngredient(ingredient);
   }
 
   @Delete(':ingredientId')

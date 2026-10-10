@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Exclude } from 'class-transformer';
-import { User } from '../../user/entities/index.js';
+import { EUnit } from '../enum/index.js';
 
 export class IngredientResponseDto {
   @ApiProperty({
@@ -33,6 +32,21 @@ export class IngredientResponseDto {
   @ApiProperty({ example: 52, description: 'Calories content' })
   calories: number;
 
-  @Exclude()
-  user: User;
+  @ApiProperty({ example: 50, description: 'Price' })
+  price: number;
+
+  @ApiProperty({ enum: EUnit, enumName: 'EUnit' })
+  unit: EUnit;
+
+  @ApiProperty({ example: 1 })
+  userId: number;
+
+  @ApiProperty({ example: '2023-10-01T00:00:00.000Z' })
+  createTimeStamp: Date;
+
+  @ApiProperty({ example: '2023-10-01T00:00:00.000Z' })
+  updateTimeStamp: Date;
+
+  @ApiProperty({ example: null, nullable: true })
+  deleteTimeStamp: Date | null;
 }

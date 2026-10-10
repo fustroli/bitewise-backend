@@ -19,9 +19,6 @@ export class UserResponseDto {
   @ApiProperty({ type: () => NotificationSettingsDto })
   notificationSettings: NotificationSettingsDto;
 
-  @ApiProperty({ example: null, nullable: true })
-  googleId: string;
-
   @ApiProperty({ example: '2023-10-01T00:00:00.000Z' })
   createTimeStamp: Date;
 

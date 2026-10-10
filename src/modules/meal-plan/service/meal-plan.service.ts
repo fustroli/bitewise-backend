@@ -10,8 +10,11 @@ import { MealPlan, MealPlanMeal } from '../entities/index.js';
 import { CreateMealPlanDto, UpdateMealPlanDto } from '../dto/index.js';
 import { MealService } from '../../meal/service/index.js';
 import { MEAL_PLAN_RELATIONS } from '../constants/index.js';
-import { PaginationDto } from '../../../common/pagination/pagination.dto.js';
-import { createQueryObject } from '../../../common/pagination/helpers/index.js';
+import {
+  createQueryObject,
+  IPaginated,
+  PaginationDto,
+} from '../../../common/pagination/index.js';
 
 @Injectable()
 export class MealPlanService {
@@ -39,7 +42,7 @@ export class MealPlanService {
   async getAll(
     userId: number,
     paginationDto: PaginationDto,
-  ): Promise<{ data: MealPlan[]; count: number }> {
+  ): Promise<IPaginated<MealPlan>> {
     const { order, take, skip } = createQueryObject(paginationDto);
 
     const [data, count] = await this.repository.findAndCount({

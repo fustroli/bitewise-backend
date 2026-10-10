@@ -24,7 +24,10 @@ import { MealService } from '../service/index.js';
 import { CurrentUser } from '../../auth/decorators/index.js';
 import { User } from '../../user/entities/index.js';
 import { serializeMeal } from '../../meal/serializers/index.js';
-import { PaginationDto } from '../../../common/pagination/pagination.dto.js';
+import {
+  mapPaginated,
+  PaginationDto,
+} from '../../../common/pagination/index.js';
 
 @ApiTags('meal')
 @UseGuards(JwtGuard, ThrottlerGuard)
@@ -43,14 +46,13 @@ export class MealController {
   }
 
   @Get()
-  @ApiOkResponse({ type: [PaginatedMealResponseDto] })
+  @ApiOkResponse({ type: PaginatedMealResponseDto })
   async getAllMeal(
     @CurrentUser() user: User,
     @Query() paginationDto: PaginationDto,
   ): Promise<PaginatedMealResponseDto> {
-    const mealsData = await this.mealService.getAll(user.id, paginationDto);
-    const serializedMeals = mealsData.data.map((meal) => serializeMeal(meal));
-    return { data: serializedMeals, count: mealsData.count };
+    const page = await this.mealService.getAll(user.id, paginationDto);
+    return mapPaginated(page, serializeMeal);
   }
 
   @Post()
