@@ -11,7 +11,7 @@ A person with a BiteWise account, identified by their sign-in email, which is un
 _Avoid_: Account (for the person), member
 
 **Profile**:
-What a User says about themselves: personal information, social profiles, avatar, and Notification settings. Never includes sign-in credentials.
+What a User says about themselves: personal information, social profiles, avatar, Body stats, and Notification settings. Never includes sign-in credentials.
 _Avoid_: Settings (for the whole page), user details
 
 **Notification settings**:
@@ -47,3 +47,13 @@ _Avoid_: Line item, component
 **Meal plan**:
 A named set of one or more distinct Meals with the same Owner.
 _Avoid_: Diet, schedule
+
+### Body
+
+**Body stats**:
+A User's sex, height, weight and Activity level as currently recorded (metric, no history). Part of their Profile.
+_Avoid_: Body metrics, biometrics, health data
+
+**Activity level**:
+How physically active a User is day to day: one of six steps from Sedentary to Extra active.
+_Avoid_: Exercise level, lifestyle
