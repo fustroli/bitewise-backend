@@ -55,10 +55,8 @@ export class SessionService {
     private readonly jwt: JwtService,
   ) {}
 
+  /** A taken email surfaces as 409 through DuplicateEntryFilter. */
   async signUp(dto: CreateUserDto): Promise<ISessionResult> {
-    if (await this.users.existsBy({ email: dto.email }))
-      throw new ConflictException('Email already in use');
-
     const user = await this.users.save(
       this.users.create({
         email: dto.email,

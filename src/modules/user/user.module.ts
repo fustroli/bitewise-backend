@@ -1,46 +1,14 @@
-import {
-  NotificationSettings,
-  PersonalInformation,
-  SocialProfiles,
-  User,
-} from './entities/index.js';
-import {
-  NotificationSettingsService,
-  PersonalInformationService,
-  SocialProfilesService,
-  UserService,
-} from './service/index.js';
-
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
+import { ProfileService } from './service/index.js';
 import { StorageService } from '../storage/storage.service.js';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from './entities/index.js';
 import { UserController } from './controller/index.js';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([
-      User,
-      PersonalInformation,
-      SocialProfiles,
-      NotificationSettings,
-    ]),
-    PassportModule.register({}),
-  ],
+  imports: [TypeOrmModule.forFeature([User]), PassportModule.register({})],
   controllers: [UserController],
-  providers: [
-    UserService,
-    PersonalInformationService,
-    SocialProfilesService,
-    NotificationSettingsService,
-    StorageService,
-  ],
-  exports: [
-    UserService,
-    PersonalInformationService,
-    SocialProfilesService,
-    NotificationSettingsService,
-    StorageService,
-  ],
+  providers: [ProfileService, StorageService],
 })
 export class UserModule {}

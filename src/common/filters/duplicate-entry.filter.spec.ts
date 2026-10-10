@@ -33,6 +33,18 @@ describe('toConflict', () => {
     );
   });
 
+  it('names the clashing username', () => {
+    expect(
+      toConflict(duplicate('user.UQ_user_user_name', 'john_doe'))?.message,
+    ).toBe("Username 'john_doe' is already taken.");
+  });
+
+  it('reports a taken sign-in email', () => {
+    expect(
+      toConflict(duplicate('user.UQ_user_active_email', 'a@b.com'))?.message,
+    ).toBe('Email already in use.');
+  });
+
   it('gives a generic 409 for other unique indexes', () => {
     expect(toConflict(duplicate('user.IDX_email'))?.message).toBe(
       'This resource already exists.',

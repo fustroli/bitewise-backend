@@ -6,6 +6,7 @@ import {
   connectTestDatabase,
   createTestDatabase,
 } from '../../../../test/int/test-database.js';
+import { toConflict } from '../../../common/filters/index.js';
 import { config } from '../../../config/index.js';
 import { User } from '../../user/entities/index.js';
 import { Session } from '../entities/index.js';
@@ -64,7 +65,12 @@ describe('SessionService', () => {
     it('rejects a taken email with 409', async () => {
       const { user } = await signUp();
 
-      await expect(signUp(user.email)).rejects.toThrow(ConflictException);
+      const conflict = await signUp(user.email).then(
+        () => null,
+        (error) => toConflict(error),
+      );
+
+      expect(conflict?.message).toBe('Email already in use.');
     });
 
     it("accepts a deleted User's email", async () => {

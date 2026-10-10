@@ -7,19 +7,11 @@ import {
   MealPlan,
   MealPlanMeal,
 } from '../../src/modules/meal-plan/entities/index.js';
-import {
-  NotificationSettings,
-  PersonalInformation,
-  SocialProfiles,
-  User,
-} from '../../src/modules/user/entities/index.js';
+import { User } from '../../src/modules/user/entities/index.js';
 
 // Listed explicitly: TypeORM's glob loading bypasses Jest's ESM transform.
 const entities = [
   User,
-  PersonalInformation,
-  SocialProfiles,
-  NotificationSettings,
   Ingredient,
   Meal,
   MealIngredient,

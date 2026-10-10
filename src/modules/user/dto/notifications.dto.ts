@@ -1,23 +1,29 @@
-import { IsBoolean, IsEmail, IsOptional } from 'class-validator';
+import { IsBoolean, IsEmail, IsOptional, ValidateIf } from 'class-validator';
 
 import { ApiProperty } from '@nestjs/swagger';
+
+// Present but null fails validation
+const IfPresent = () => ValidateIf((_object, value) => value !== undefined);
 
 export class NotificationSettingsDto {
   @ApiProperty({
     example: 'user@example.com',
-    description: 'The default email address for notifications',
+    description:
+      'The default email address for notifications; null means the sign-in email',
+    nullable: true,
     required: false,
   })
   @IsOptional()
   @IsEmail()
-  defaultEmailAddress?: string;
+  defaultEmailAddress?: string | null;
 
+  // The flags can't be cleared, only set
   @ApiProperty({
     example: true,
     description: 'Flag to receive communication emails',
     required: false,
   })
-  @IsOptional()
+  @IfPresent()
   @IsBoolean()
   communicationEmail?: boolean;
 
@@ -26,7 +32,7 @@ export class NotificationSettingsDto {
     description: 'Flag to receive marketing emails',
     required: false,
   })
-  @IsOptional()
+  @IfPresent()
   @IsBoolean()
   marketingEmail?: boolean;
 
@@ -35,7 +41,7 @@ export class NotificationSettingsDto {
     description: 'Flag to receive security emails',
     required: false,
   })
-  @IsOptional()
+  @IfPresent()
   @IsBoolean()
   securityEmail?: boolean;
 }

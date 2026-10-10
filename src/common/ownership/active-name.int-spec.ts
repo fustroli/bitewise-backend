@@ -5,7 +5,7 @@ import {
 
 // TypeORM has a history of re-diffing generated columns on every synchronize.
 // If this starts failing, fall back to an app-level name check (see ADR-0001).
-describe('activeName generated column', () => {
+describe('activeName / activeEmail generated columns', () => {
   it('causes no schema drift on a second synchronize', async () => {
     const database = await createTestDatabase();
     await (await connectTestDatabase(database)).destroy();
