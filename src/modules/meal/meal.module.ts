@@ -6,12 +6,10 @@ import { MealService } from './service/index.js';
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserModule } from '../user/user.module.js';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Meal, MealIngredient, Ingredient]),
-    UserModule,
     PassportModule.register({}),
   ],
   controllers: [MealController],

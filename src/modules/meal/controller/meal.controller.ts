@@ -57,8 +57,11 @@ export class MealController {
 
   @Post()
   @ApiOkResponse({ type: MealResponseDto })
-  async createMeal(@Body() dto: CreateMealDto): Promise<MealResponseDto> {
-    const meal = await this.mealService.createOne(dto);
+  async createMeal(
+    @Body() dto: CreateMealDto,
+    @CurrentUser() user: User,
+  ): Promise<MealResponseDto> {
+    const meal = await this.mealService.createOne(dto, user.id);
     return serializeMeal(meal);
   }
 

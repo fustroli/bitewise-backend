@@ -3,7 +3,6 @@ import {
   ArrayMinSize,
   IsArray,
   IsNotEmpty,
-  IsNumber,
   IsString,
   Length,
   ValidateNested,
@@ -33,8 +32,4 @@ export class CreateMealDto {
     required: true,
   })
   readonly mealIngredients: IngredientQuantityDto[];
-
-  @IsNumber()
-  @ApiProperty({ example: 1, required: true })
-  readonly userId: number;
 }
