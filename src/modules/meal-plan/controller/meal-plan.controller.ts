@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -34,7 +35,7 @@ export class MealPlanController {
   @Get(':mealPlanId')
   @ApiOkResponse({ type: MealPlanResponseDto })
   async getOneMealPlan(
-    @Param('mealPlanId') mealPlanId: number,
+    @Param('mealPlanId', ParseIntPipe) mealPlanId: number,
     @CurrentUser() user: IAuthenticatedUser,
   ) {
     const mealPlan = await this.mealPlanService.getOne(mealPlanId, user.userId);
@@ -64,7 +65,7 @@ export class MealPlanController {
   @Patch(':mealPlanId')
   @ApiOkResponse({ type: MealPlanResponseDto })
   async updateMealPlan(
-    @Param('mealPlanId') mealPlanId: number,
+    @Param('mealPlanId', ParseIntPipe) mealPlanId: number,
     @Body() body: UpdateMealPlanDto,
     @CurrentUser() user: IAuthenticatedUser,
   ) {
@@ -79,7 +80,7 @@ export class MealPlanController {
   @Delete(':mealPlanId')
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteMealPlan(
-    @Param('mealPlanId') mealPlanId: number,
+    @Param('mealPlanId', ParseIntPipe) mealPlanId: number,
     @CurrentUser() user: IAuthenticatedUser,
   ): Promise<void> {
     return this.mealPlanService.deleteOne(mealPlanId, user.userId);

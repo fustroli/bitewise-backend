@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -35,7 +36,7 @@ export class MealController {
   @ApiOkResponse({ type: MealResponseDto })
   async getOneMeal(
     @CurrentUser() user: IAuthenticatedUser,
-    @Param('mealId') mealId: number,
+    @Param('mealId', ParseIntPipe) mealId: number,
   ): Promise<MealResponseDto> {
     const meal = await this.mealService.getOne(mealId, user.userId);
     return serializeMeal(meal);
@@ -65,7 +66,7 @@ export class MealController {
   @ApiOkResponse({ type: MealResponseDto })
   async updateMeal(
     @CurrentUser() user: IAuthenticatedUser,
-    @Param('mealId') mealId: number,
+    @Param('mealId', ParseIntPipe) mealId: number,
     @Body() body: UpdateMealDto,
   ): Promise<MealResponseDto> {
     const meal = await this.mealService.updateOne(mealId, body, user.userId);
@@ -76,7 +77,7 @@ export class MealController {
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteMeal(
     @CurrentUser() user: IAuthenticatedUser,
-    @Param('mealId') mealId: number,
+    @Param('mealId', ParseIntPipe) mealId: number,
   ): Promise<void> {
     return this.mealService.deleteOne(mealId, user.userId);
   }

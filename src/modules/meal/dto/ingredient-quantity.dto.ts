@@ -1,9 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsNotEmpty, IsPositive } from 'class-validator';
+import { IsInt, IsNumber, IsNotEmpty, IsPositive, Max } from 'class-validator';
+import { QUANTITY_MAX } from '../../../utils/constants.js';
 
 export class IngredientQuantityDto {
-  @IsNumber()
-  @IsNotEmpty()
+  @IsInt()
+  @IsPositive()
   @ApiProperty({
     example: 1,
     description: 'ID of the ingredient',
@@ -14,9 +15,11 @@ export class IngredientQuantityDto {
   @IsNumber()
   @IsNotEmpty()
   @IsPositive()
+  @Max(QUANTITY_MAX)
   @ApiProperty({
     example: 100,
     description: 'Quantity of the ingredient in the meal',
+    maximum: QUANTITY_MAX,
     required: true,
   })
   readonly quantity: number;

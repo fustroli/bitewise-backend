@@ -5,10 +5,15 @@ import {
   IsNumber,
   IsString,
   Length,
+  Max,
   Min,
 } from 'class-validator';
 import { IsBiggerThanSaturatedFat } from '../decorator/index.js';
-import { MAX_LENGTH, MIN_LENGTH } from '../../../utils/constants.js';
+import {
+  MAX_LENGTH,
+  MIN_LENGTH,
+  NUTRIENT_MAX,
+} from '../../../utils/constants.js';
 import { EUnit } from '../enum/index.js';
 
 export class CreateIngredientDto {
@@ -23,6 +28,7 @@ export class CreateIngredientDto {
   @IsNumber()
   @IsNotEmpty()
   @Min(0)
+  @Max(NUTRIENT_MAX)
   @ApiProperty({
     example: 10,
     description: 'Amount of protein in grams',
@@ -33,6 +39,7 @@ export class CreateIngredientDto {
   @IsNumber()
   @IsNotEmpty()
   @Min(0)
+  @Max(NUTRIENT_MAX)
   @IsBiggerThanSaturatedFat()
   @ApiProperty({
     example: 5,
@@ -44,6 +51,7 @@ export class CreateIngredientDto {
   @IsNumber()
   @IsNotEmpty()
   @Min(0)
+  @Max(NUTRIENT_MAX)
   @ApiProperty({
     example: 2,
     description: 'Saturated fat in grams',
@@ -54,6 +62,7 @@ export class CreateIngredientDto {
   @IsNumber()
   @IsNotEmpty()
   @Min(0)
+  @Max(NUTRIENT_MAX)
   @ApiProperty({
     example: 30,
     description: 'Total carbohydrates in grams',
@@ -64,6 +73,7 @@ export class CreateIngredientDto {
   @IsNumber()
   @IsNotEmpty()
   @Min(0)
+  @Max(NUTRIENT_MAX)
   @ApiProperty({
     example: 10,
     description: 'Sugar content in grams',
@@ -74,6 +84,7 @@ export class CreateIngredientDto {
   @IsNumber()
   @IsNotEmpty()
   @Min(0)
+  @Max(NUTRIENT_MAX)
   @ApiProperty({
     example: 5,
     description: 'Dietary fiber in grams',
@@ -84,6 +95,7 @@ export class CreateIngredientDto {
   @IsNumber()
   @IsNotEmpty()
   @Min(0)
+  @Max(NUTRIENT_MAX)
   @ApiProperty({
     example: 200,
     description: 'Calories content',
