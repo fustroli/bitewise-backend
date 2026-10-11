@@ -52,6 +52,8 @@ npm run test:e2e    # e2e tests
 npm run test:cov    # coverage
 ```
 
+Load tests (k6, against a prod build): see [`test/load/README.md`](test/load/README.md).
+
 ## API docs
 
 Swagger UI is served at `/api/docs` (OpenAPI JSON at `/api/docs-json`). It maps every route, so it is

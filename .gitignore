@@ -59,3 +59,5 @@ bitewise-storage-key.json
 
 # Local seed script and test data
 /seed/
+/test/load/loadtest.env
+/test/load/results/

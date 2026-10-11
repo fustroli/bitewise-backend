@@ -139,6 +139,7 @@ npm run test                   # Unit tests (ESM, via --experimental-vm-modules)
 npm run test:cov               # Coverage report
 npm run test:e2e               # E2E tests
 npm run test:int               # Integration tests (*.int-spec.ts) — needs Docker (Testcontainers MySQL)
+npm run load:smoke             # k6 load tests (also provision/load/stress/soak) — see test/load/README.md
 
 # Lint / format
 npm run lint
