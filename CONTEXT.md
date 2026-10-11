@@ -51,7 +51,7 @@ _Avoid_: Diet, schedule
 ### Body
 
 **Body stats**:
-A User's sex, height, weight and Activity level as currently recorded (metric, no history). Part of their Profile.
+A User's sex, height, weight, Activity level and tape measurements (neck, waist, hip) as currently recorded (metric, no history). Part of their Profile. Nothing derived from them (e.g. body fat percentage) is stored.
 _Avoid_: Body metrics, biometrics, health data
 
 **Activity level**:

@@ -121,6 +121,16 @@ describe('User responses (e2e)', () => {
     { bodyStats: { weightKg: '70' } },
     { bodyStats: { sex: 'OTHER' } },
     { bodyStats: { activityLevel: 'LAZY' } },
+    { bodyStats: { neckCm: 19.5 } },
+    { bodyStats: { neckCm: 60.5 } },
+    { bodyStats: { neckCm: 37.2 } },
+    { bodyStats: { neckCm: '37' } },
+    { bodyStats: { waistCm: 39.5 } },
+    { bodyStats: { waistCm: 200.5 } },
+    { bodyStats: { waistCm: 84.25 } },
+    { bodyStats: { hipCm: 49.5 } },
+    { bodyStats: { hipCm: 200.5 } },
+    { bodyStats: { hipCm: 98.7 } },
   ])('PATCH /api/users/me rejects Body stats %o with 400', async (body) => {
     await request(app.getHttpServer())
       .patch('/api/users/me')
@@ -138,7 +148,18 @@ describe('User responses (e2e)', () => {
       },
       { heightCm: 250, weightKg: 300 },
       { weightKg: 72.5 },
-      { sex: null, heightCm: null, weightKg: null, activityLevel: null },
+      { neckCm: 20, waistCm: 40, hipCm: 50 },
+      { neckCm: 60, waistCm: 200, hipCm: 200 },
+      { neckCm: 37.5, waistCm: 84.5, hipCm: 98.5 },
+      {
+        sex: null,
+        heightCm: null,
+        weightKg: null,
+        activityLevel: null,
+        neckCm: null,
+        waistCm: null,
+        hipCm: null,
+      },
     ])
       await request(app.getHttpServer())
         .patch('/api/users/me')
@@ -156,6 +177,9 @@ describe('User responses (e2e)', () => {
       heightCm: null,
       weightKg: null,
       activityLevel: null,
+      neckCm: null,
+      waistCm: null,
+      hipCm: null,
     });
   });
 

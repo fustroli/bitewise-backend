@@ -25,6 +25,9 @@ export function stubUser(override: Partial<User> = {}): User {
       heightCm: null,
       weightKg: null,
       activityLevel: null,
+      neckCm: null,
+      waistCm: null,
+      hipCm: null,
     },
     notificationSettings: {
       defaultEmailAddress: null,
