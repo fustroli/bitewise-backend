@@ -20,6 +20,12 @@ export function stubUser(override: Partial<User> = {}): User {
       instagram: null,
       linkedin: null,
     },
+    bodyStats: {
+      sex: null,
+      heightCm: null,
+      weightKg: null,
+      activityLevel: null,
+    },
     notificationSettings: {
       defaultEmailAddress: null,
       communicationEmail: false,

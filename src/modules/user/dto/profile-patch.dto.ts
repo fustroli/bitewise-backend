@@ -1,6 +1,7 @@
 import { IsObject, ValidateIf, ValidateNested } from 'class-validator';
 
 import { ApiProperty } from '@nestjs/swagger';
+import { BodyStatsDto } from './body-stats.dto.js';
 import { NotificationSettingsDto } from './notifications.dto.js';
 import { PersonalInformationDto } from './personal-information.dto.js';
 import { SocialProfilesDto } from './social-profiles.dto.js';
@@ -24,6 +25,13 @@ export class ProfilePatchDto {
   @Type(() => SocialProfilesDto)
   @ApiProperty({ type: SocialProfilesDto, required: false })
   socialProfiles?: SocialProfilesDto;
+
+  @IfPresent()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => BodyStatsDto)
+  @ApiProperty({ type: BodyStatsDto, required: false })
+  bodyStats?: BodyStatsDto;
 
   @IfPresent()
   @IsObject()

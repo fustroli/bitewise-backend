@@ -9,6 +9,7 @@ import {
 import { toConflict } from '../../../common/filters/index.js';
 import { StorageService } from '../../storage/storage.service.js';
 import { User } from '../entities/index.js';
+import { EActivityLevel, ESex } from '../enum/index.js';
 import { ProfileService } from './profile.service.js';
 
 const uniqueUserName = () => `john_${randomUUID().split('-')[0]}`;
@@ -25,6 +26,12 @@ const EMPTY_SOCIAL_PROFILES = {
   twitter: null,
   instagram: null,
   linkedin: null,
+};
+const EMPTY_BODY_STATS = {
+  sex: null,
+  heightCm: null,
+  weightKg: null,
+  activityLevel: null,
 };
 
 describe('ProfileService', () => {
@@ -63,6 +70,7 @@ describe('ProfileService', () => {
 
       expect(profile.personalInformation).toEqual(EMPTY_PERSONAL_INFORMATION);
       expect(profile.socialProfiles).toEqual(EMPTY_SOCIAL_PROFILES);
+      expect(profile.bodyStats).toEqual(EMPTY_BODY_STATS);
       expect(profile.notificationSettings).toEqual({
         defaultEmailAddress: null,
         communicationEmail: false,
@@ -137,6 +145,55 @@ describe('ProfileService', () => {
     });
   });
 
+  describe('Body stats', () => {
+    const BODY_STATS = {
+      sex: ESex.FEMALE,
+      heightCm: 170,
+      weightKg: 64.5,
+      activityLevel: EActivityLevel.MODERATE,
+    };
+
+    beforeEach(() =>
+      profiles.updateProfile(user.id, { bodyStats: BODY_STATS }),
+    );
+
+    it('stores every field, weight as a number with one decimal', async () => {
+      const { bodyStats } = await profiles.getProfile(user.id);
+
+      expect(bodyStats).toEqual(BODY_STATS);
+      expect(typeof bodyStats.weightKg).toBe('number');
+    });
+
+    it('leaves missing fields unchanged', async () => {
+      await profiles.updateProfile(user.id, { bodyStats: { weightKg: 63.2 } });
+
+      const { bodyStats } = await profiles.getProfile(user.id);
+      expect(bodyStats).toEqual({ ...BODY_STATS, weightKg: 63.2 });
+    });
+
+    it('clears a field set to null', async () => {
+      await profiles.updateProfile(user.id, {
+        bodyStats: { weightKg: null, activityLevel: null },
+      });
+
+      const { bodyStats } = await profiles.getProfile(user.id);
+      expect(bodyStats).toEqual({
+        ...BODY_STATS,
+        weightKg: null,
+        activityLevel: null,
+      });
+    });
+
+    it('is left unchanged by a patch to another group', async () => {
+      await profiles.updateProfile(user.id, {
+        personalInformation: { firstName: 'Jane' },
+      });
+
+      const { bodyStats } = await profiles.getProfile(user.id);
+      expect(bodyStats).toEqual(BODY_STATS);
+    });
+  });
+
   describe('username uniqueness', () => {
     it('rejects a taken username with 409, whatever the case', async () => {
       const userName = uniqueUserName();
@@ -195,6 +252,7 @@ describe('ProfileService', () => {
       await profiles.updateProfile(user.id, {
         personalInformation: { userName, firstName: 'John' },
         socialProfiles: { linkedin: 'https://linkedin.com/in/john' },
+        bodyStats: { sex: ESex.MALE, heightCm: 180, weightKg: 80.5 },
         notificationSettings: {
           defaultEmailAddress: 'john@example.com',
           marketingEmail: true,
@@ -211,6 +269,7 @@ describe('ProfileService', () => {
       expect(deleted.avatarUrl).toBeNull();
       expect(deleted.personalInformation).toEqual(EMPTY_PERSONAL_INFORMATION);
       expect(deleted.socialProfiles).toEqual(EMPTY_SOCIAL_PROFILES);
+      expect(deleted.bodyStats).toEqual(EMPTY_BODY_STATS);
       expect(deleted.notificationSettings).toMatchObject({
         defaultEmailAddress: null,
         marketingEmail: false,

@@ -13,6 +13,7 @@ import { StorageService } from '../../storage/storage.service.js';
 const GROUPS = [
   'personalInformation',
   'socialProfiles',
+  'bodyStats',
   'notificationSettings',
 ] as const;
 
@@ -65,6 +66,12 @@ export class ProfileService {
           twitter: null,
           instagram: null,
           linkedin: null,
+        },
+        bodyStats: {
+          sex: null,
+          heightCm: null,
+          weightKg: null,
+          activityLevel: null,
         },
         notificationSettings: {
           defaultEmailAddress: null,
