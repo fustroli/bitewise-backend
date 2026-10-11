@@ -297,12 +297,10 @@ describe('SessionService', () => {
     it('links a verified email to the existing User', async () => {
       const { user } = await signUp();
 
-      const linked = await sessions.signInSocial(
-        google(user.email, { provider: 'facebook' }),
-      );
+      const linked = await sessions.signInSocial(google(user.email));
 
       expect(linked.user.id).toBe(user.id);
-      expect(linked.user.facebookId).toBeDefined();
+      expect(linked.user.googleId).toBeDefined();
       await expect(
         sessions.signIn({ email: user.email, password: PASSWORD }),
       ).resolves.toBeDefined();
