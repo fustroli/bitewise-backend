@@ -36,9 +36,13 @@ export interface ISessionResult {
   tokens: ISessionTokens;
 }
 
-const PROVIDER_ID_COLUMN = {
-  google: 'googleId',
-} as const satisfies Record<ISocialProfile['provider'], keyof User>;
+// The stored provider id, and its indexed active copy to look it up by
+const PROVIDER_ID_COLUMNS = {
+  google: { column: 'googleId', active: 'activeGoogleId' },
+} as const satisfies Record<
+  ISocialProfile['provider'],
+  { column: keyof User; active: keyof User }
+>;
 
 const INVALID_CREDENTIALS = 'Invalid email or password';
 const INVALID_REFRESH_TOKEN = 'Invalid refresh token';
@@ -71,7 +75,7 @@ export class SessionService {
   }
 
   async signIn(dto: LoginUserDto): Promise<ISessionResult> {
-    const user = await this.users.findOneBy({ email: dto.email });
+    const user = await this.users.findOneBy({ activeEmail: dto.email });
 
     const matches =
       !!user?.hash && (await bcrypt.compare(dto.password, user.hash));
@@ -86,11 +90,11 @@ export class SessionService {
    * verified that email; otherwise a new User is created.
    */
   async signInSocial(profile: ISocialProfile): Promise<ISessionResult> {
-    const column = PROVIDER_ID_COLUMN[profile.provider];
+    const { column, active } = PROVIDER_ID_COLUMNS[profile.provider];
 
-    let user = await this.users.findOneBy({ [column]: profile.providerId });
+    let user = await this.users.findOneBy({ [active]: profile.providerId });
     if (!user) {
-      const owner = await this.users.findOneBy({ email: profile.email });
+      const owner = await this.users.findOneBy({ activeEmail: profile.email });
       if (owner && !profile.emailVerified)
         throw new ConflictException('Sign in with your password first');
 

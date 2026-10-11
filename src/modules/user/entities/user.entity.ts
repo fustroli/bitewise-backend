@@ -24,6 +24,8 @@ import { ActiveColumn } from '../../../common/ownership/index.js';
 @Entity()
 // Sign-in email is unique among non-deleted Users (ADR-0001)
 @Index('UQ_user_active_email', ['activeEmail'], { unique: true })
+// One Google identity per non-deleted User; also indexes the social sign-in lookup
+@Index('UQ_user_active_google_id', ['activeGoogleId'], { unique: true })
 // Case-insensitive via the default collation; NULLs never collide
 @Index('UQ_user_user_name', ['personalInformation.userName'], { unique: true })
 export class User {
@@ -66,6 +68,10 @@ export class User {
   @Exclude()
   @Column({ nullable: true })
   googleId: string;
+
+  @Exclude()
+  @ActiveColumn('googleId')
+  activeGoogleId?: string | null;
 
   @CreateDateColumn()
   createTimeStamp: Date;

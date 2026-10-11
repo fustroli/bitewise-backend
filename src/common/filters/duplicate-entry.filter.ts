@@ -8,6 +8,10 @@ const ACTIVE_NAME_INDEX = /^UQ_(\w+)_active_name$/;
 // Other unique indexes with a specific message, keyed by index name
 const INDEX_MESSAGES = new Map<string, (entry: string) => string>([
   ['UQ_user_active_email', () => 'Email already in use.'],
+  [
+    'UQ_user_active_google_id',
+    () => 'This Google account is already linked to another user.',
+  ],
   ['UQ_user_user_name', (entry) => `Username '${entry}' is already taken.`],
 ]);
 

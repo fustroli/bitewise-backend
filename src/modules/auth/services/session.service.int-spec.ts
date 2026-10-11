@@ -112,6 +112,15 @@ describe('SessionService', () => {
       ).rejects.toThrow('Invalid email or password');
     });
 
+    it('rejects a deleted User with 401', async () => {
+      const { user } = await signUp();
+      await dataSource.getRepository(User).softDelete(user.id);
+
+      await expect(
+        sessions.signIn({ email: user.email, password: PASSWORD }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
     it("deletes the User's expired Sessions", async () => {
       const { user } = await signUp();
       await dataSource
@@ -315,6 +324,39 @@ describe('SessionService', () => {
       expect(
         await dataSource.getRepository(User).findOneBy({ id: user.id }),
       ).toMatchObject({ googleId: null });
+    });
+
+    it("creates a new User for a deleted User's identity", async () => {
+      const profile = google(`${randomUUID()}@example.com`);
+      const { user } = await sessions.signInSocial(profile);
+      await dataSource.getRepository(User).softDelete(user.id);
+
+      const again = await sessions.signInSocial(profile);
+
+      expect(again.user.id).not.toBe(user.id);
+      expect(again.user.googleId).toBe(profile.providerId);
+    });
+
+    it('rejects a second User with the same identity with 409', async () => {
+      const profile = google(`${randomUUID()}@example.com`);
+      await sessions.signInSocial(profile);
+      const users = dataSource.getRepository(User);
+
+      const conflict = await users
+        .save(
+          users.create({
+            email: `${randomUUID()}@example.com`,
+            googleId: profile.providerId,
+          }),
+        )
+        .then(
+          () => null,
+          (error) => toConflict(error),
+        );
+
+      expect(conflict?.message).toBe(
+        'This Google account is already linked to another user.',
+      );
     });
 
     it('creates a User for an unverified email nobody has', async () => {
