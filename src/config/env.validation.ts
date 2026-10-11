@@ -65,6 +65,10 @@ class EnvironmentVariables {
   @IsIn(['development', 'production', 'test'])
   NODE_ENV: string;
 
+  @IsOptional()
+  @IsIn(['true', 'false'])
+  SWAGGER_ENABLED?: string;
+
   @IsString()
   @MinLength(MIN_SECRET_LENGTH)
   ACCESS_TOKEN_SECRET: string;
