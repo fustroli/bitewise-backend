@@ -100,6 +100,11 @@ export class OwnedRepository<T extends IOwnedEntity> {
     return { data, count };
   }
 
+  // COUNT of the owner's non-deleted resources; nothing is loaded
+  countOwned(ownerId: number): Promise<number> {
+    return this.repository.count({ where: this.ownedWhere(ownerId) });
+  }
+
   async createOwned(data: DeepPartial<T>, ownerId: number): Promise<T> {
     const entity = this.repository.create({
       ...data,

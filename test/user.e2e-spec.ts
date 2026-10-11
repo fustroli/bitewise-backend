@@ -12,7 +12,8 @@ const { UserController } =
   await import('../src/modules/user/controller/index.js');
 const { stubUser, User } =
   await import('../src/modules/user/entities/index.js');
-const { ProfileService } = await import('../src/modules/user/service/index.js');
+const { ProfileService, StatisticsService } =
+  await import('../src/modules/user/service/index.js');
 
 const credentials = ['hash', 'googleId'];
 
@@ -41,6 +42,7 @@ describe('User responses (e2e)', () => {
               Object.assign(user(), { avatarUrl: 'https://cdn/avatar.png' }),
           },
         },
+        { provide: StatisticsService, useValue: {} },
         // Stands in for the global JwtGuard
         {
           provide: APP_GUARD,
