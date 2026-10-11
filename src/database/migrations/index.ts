@@ -1,6 +1,7 @@
 import { InitialSchema1791708071108 } from './1791708071108-InitialSchema.js';
 import { DropUserFacebookId1791720000000 } from './1791720000000-DropUserFacebookId.js';
 import { AddUserActiveGoogleId1791730000000 } from './1791730000000-AddUserActiveGoogleId.js';
+import { AddSessionExpiresAtIndex1791740000000 } from './1791740000000-AddSessionExpiresAtIndex.js';
 
 // Every migration, in order. Listed explicitly rather than globbed: Jest's ESM
 // transform can't see glob-loaded files, and int tests run these migrations.
@@ -9,4 +10,5 @@ export const migrations = [
   InitialSchema1791708071108,
   DropUserFacebookId1791720000000,
   AddUserActiveGoogleId1791730000000,
+  AddSessionExpiresAtIndex1791740000000,
 ];

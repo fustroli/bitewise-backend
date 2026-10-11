@@ -1,12 +1,13 @@
 import { NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import {
   connectTestDatabase,
   createTestDatabase,
   createUser,
 } from '../../../../test/int/test-database.js';
 import { toConflict } from '../../../common/filters/index.js';
+import { Session } from '../../auth/entities/index.js';
 import { StorageService } from '../../storage/storage.service.js';
 import { User } from '../entities/index.js';
 import { EActivityLevel, ESex } from '../enum/index.js';
@@ -294,6 +295,27 @@ describe('ProfileService', () => {
         defaultEmailAddress: null,
         marketingEmail: false,
       });
+    });
+
+    it("ends every one of the User's Sessions, and only theirs", async () => {
+      const other = await createUser(dataSource);
+      const sessions = dataSource.getRepository(Session);
+      const startSession = (owner: User) =>
+        sessions.insert({
+          id: randomUUID(),
+          user: { id: owner.id },
+          refreshTokenHash: createHash('sha256').update('token').digest('hex'),
+          expiresAt: new Date('2100-01-01'),
+          lastUsedAt: new Date(),
+        });
+      await startSession(user);
+      await startSession(user);
+      await startSession(other);
+
+      await profiles.deleteAccount(user.id);
+
+      expect(await sessions.countBy({ user: { id: user.id } })).toBe(0);
+      expect(await sessions.countBy({ user: { id: other.id } })).toBe(1);
     });
 
     it('frees the email and username for a new User', async () => {

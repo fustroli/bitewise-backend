@@ -7,6 +7,7 @@ import {
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../entities/index.js';
+import { Session } from '../../auth/entities/index.js';
 import { ProfilePatchDto } from '../dto/index.js';
 import { StorageService } from '../../storage/storage.service.js';
 
@@ -48,6 +49,7 @@ export class ProfileService {
   /**
    * Soft-deletes the User and erases their Profile. The row stays so Owned
    * resources keep a valid Owner; the email becomes free to sign up again.
+   * Ends every Session of the User.
    */
   async deleteAccount(userId: number): Promise<void> {
     const user = await this.getProfile(userId);
@@ -85,6 +87,7 @@ export class ProfileService {
         avatarUrl: null,
       });
       await manager.softDelete(User, user.id);
+      await manager.delete(Session, { user: { id: user.id } });
     });
   }
 

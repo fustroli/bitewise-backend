@@ -370,6 +370,35 @@ describe('SessionService', () => {
     });
   });
 
+  describe('deleteExpired', () => {
+    it('deletes expired Sessions in batches and keeps live ones', async () => {
+      const EXPIRED_SESSIONS = 5;
+      const BATCH_SIZE = 2;
+      const { user: expired } = await signUp();
+      for (let i = 1; i < EXPIRED_SESSIONS; i++)
+        await sessions.signIn({ email: expired.email, password: PASSWORD });
+      await dataSource
+        .getRepository(Session)
+        .update({ user: { id: expired.id } }, { expiresAt: new Date(0) });
+      const { user: live, tokens } = await signUp();
+
+      // Other tests' expired Sessions may be deleted too
+      await expect(
+        sessions.deleteExpired(BATCH_SIZE),
+      ).resolves.toBeGreaterThanOrEqual(EXPIRED_SESSIONS);
+
+      expect(await sessionCount(expired)).toBe(0);
+      expect(await sessionCount(live)).toBe(1);
+      await expect(authenticate(tokens)).resolves.toBeDefined();
+    });
+
+    it('is a no-op when nothing has expired', async () => {
+      await sessions.deleteExpired();
+
+      await expect(sessions.deleteExpired()).resolves.toBe(0);
+    });
+  });
+
   describe('authenticate', () => {
     it('rejects a deleted User with 401', async () => {
       const { user, tokens } = await signUp();

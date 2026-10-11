@@ -47,6 +47,9 @@ const PROVIDER_ID_COLUMNS = {
 const INVALID_CREDENTIALS = 'Invalid email or password';
 const INVALID_REFRESH_TOKEN = 'Invalid refresh token';
 
+// Rows per DELETE, so one cleanup run never holds locks on the whole table
+const EXPIRED_BATCH_SIZE = 1000;
+
 /**
  * The Session lifecycle: starts Sessions (sign-up, sign-in), rotates their
  * refresh tokens, ends them, and authenticates access tokens against them.
@@ -160,6 +163,26 @@ export class SessionService {
       hash: await bcrypt.hash(dto.password, config.SALT_WORK_FACTOR),
     });
     await this.sessions.delete({ user: { id: user.id }, id: Not(sid) });
+  }
+
+  /**
+   * Deletes every Session that expired before now, in batches; returns how
+   * many. Idempotent, so concurrent runs on several instances are harmless.
+   */
+  async deleteExpired(batchSize = EXPIRED_BATCH_SIZE): Promise<number> {
+    const now = new Date();
+    let deleted = 0;
+
+    for (;;) {
+      const { affectedRows } = await this.sessions.query<{
+        affectedRows: number;
+      }>('DELETE FROM `session` WHERE `expiresAt` < ? LIMIT ?', [
+        now,
+        batchSize,
+      ]);
+      deleted += affectedRows;
+      if (affectedRows < batchSize) return deleted;
+    }
   }
 
   /**
