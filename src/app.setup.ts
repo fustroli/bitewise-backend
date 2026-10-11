@@ -4,6 +4,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { HttpAdapterHost, Reflector } from '@nestjs/core';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import { DuplicateEntryFilter } from './common/filters/index.js';
 import { config } from './config/index.js';
@@ -15,6 +16,9 @@ export function setupApp(app: INestApplication) {
     .getHttpAdapter()
     .getInstance()
     .set('trust proxy', config.TRUST_PROXY_HOPS);
+
+  //gzip/brotli bodies over 1kb per Accept-Encoding (sets Vary); nginx/CloudFront don't compress
+  app.use(compression({ threshold: '1kb' }));
 
   //req.cookies (the OAuth state cookie)
   app.use(cookieParser());
