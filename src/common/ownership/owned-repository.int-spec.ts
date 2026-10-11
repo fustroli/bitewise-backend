@@ -197,6 +197,67 @@ describe('OwnedRepository', () => {
     });
   });
 
+  describe('listOwned with search', () => {
+    const createAll = (names: string[], ownerId = owner.id) =>
+      repository.save(
+        names.map((name) =>
+          repository.create({ ...ingredient(name), user: { id: ownerId } }),
+        ),
+      );
+
+    const namesFound = async (search: string) =>
+      (
+        await ingredients.listOwned(owner.id, { search, orderBy: 'name' })
+      ).data.map((i) => i.name);
+
+    it('matches a substring regardless of case and accents', async () => {
+      await createAll(['Apple', 'Pineapple', 'Crème brûlée', 'Pear']);
+
+      expect(await namesFound('APPLE')).toEqual(['Apple', 'Pineapple']);
+      expect(await namesFound('creme brulee')).toEqual(['Crème brûlée']);
+    });
+
+    it('matches LIKE wildcards literally', async () => {
+      await createAll(['100% juice', '100 juice', 'a_b', 'axb', 'back\\slash']);
+
+      expect(await namesFound('%')).toEqual(['100% juice']);
+      expect(await namesFound('_')).toEqual(['a_b']);
+      expect(await namesFound('\\')).toEqual(['back\\slash']);
+    });
+
+    it('applies sort and paging to the matches and counts all matches', async () => {
+      await createAll(['Apple', 'Pineapple', 'Crab apple', 'Pear']);
+
+      const page = await ingredients.listOwned(owner.id, {
+        search: 'apple',
+        orderBy: 'name',
+        orderDirection: EOrderDirection.DESC,
+        limit: 2,
+        offset: 1,
+      });
+
+      const matches = ['Apple', 'Pineapple', 'Crab apple'];
+      expect(page.count).toBe(matches.length);
+      expect(page.data.map((i) => i.name)).toEqual(['Crab apple', 'Apple']);
+    });
+
+    it("never returns someone else's matches", async () => {
+      await createAll(['Apple']);
+      await createAll(['Apple pie', 'Pineapple'], stranger.id);
+
+      const page = await ingredients.listOwned(owner.id, { search: 'apple' });
+
+      expect(page.count).toBe(1);
+      expect(page.data.map((i) => i.name)).toEqual(['Apple']);
+    });
+
+    it('does not filter on an empty search', async () => {
+      await createAll(['Apple', 'Pear']);
+
+      expect(await namesFound('')).toEqual(['Apple', 'Pear']);
+    });
+  });
+
   describe('softDeleteOwned', () => {
     it("404s for someone else's resource and leaves it intact", async () => {
       const { id } = await ingredients.createOwned(

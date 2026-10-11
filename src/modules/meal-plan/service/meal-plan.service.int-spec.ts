@@ -166,6 +166,22 @@ describe('MealPlanService', () => {
       expect(page.data.map((mp) => mp.name)).toEqual([...names].sort());
       expect(page.data[0].mealPlanMeals[0].meal.name).toBe('Oats');
     });
+
+    it("searches the Owner's Meal plans by name", async () => {
+      const oats = await createMeal('Oats', owner);
+      for (const name of ['Bulk week', 'Monday', 'Weekend']) {
+        await mealPlans.createOne({ name, mealIds: [oats.id] }, owner.id);
+      }
+
+      const page = await mealPlans.getAll(owner.id, {
+        search: 'WEEK',
+        orderBy: 'name',
+      });
+
+      const matches = ['Bulk week', 'Weekend'];
+      expect(page.count).toBe(matches.length);
+      expect(page.data.map((mp) => mp.name)).toEqual(matches);
+    });
   });
 
   describe('updateOne', () => {

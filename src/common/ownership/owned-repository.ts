@@ -5,6 +5,7 @@ import {
   FindOptionsRelations,
   FindOptionsWhere,
   In,
+  Like,
   Repository,
 } from 'typeorm';
 import {
@@ -17,6 +18,7 @@ import {
 
 export interface IOwnedEntity {
   id: number;
+  name: string;
   user: { id: number };
 }
 
@@ -83,7 +85,7 @@ export class OwnedRepository<T extends IOwnedEntity> {
     pagination: PaginationDto,
   ): Promise<IPaginated<T>> {
     const [data, count] = await this.repository.findAndCount({
-      where: this.ownedWhere(ownerId),
+      where: this.ownedWhere(ownerId, this.search(pagination)),
       relations: this.config.relations,
       order: this.order(pagination),
       take: Math.min(pagination.limit ?? DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT),
@@ -114,6 +116,13 @@ export class OwnedRepository<T extends IOwnedEntity> {
     where: Record<string, unknown> = {},
   ): FindOptionsWhere<T> {
     return { ...where, user: { id: ownerId } } as FindOptionsWhere<T>;
+  }
+
+  // Substring match on name; LIKE wildcards in the term match literally
+  private search({ search }: PaginationDto): Record<string, unknown> {
+    if (!search) return {};
+
+    return { name: Like(`%${search.replace(/[\\%_]/g, '\\$&')}%`) };
   }
 
   private order({
