@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
@@ -57,7 +58,7 @@ export class IngredientController {
   @Patch(':ingredientId')
   @ApiOkResponse({ type: IngredientResponseDto })
   async updateIngredient(
-    @Param('ingredientId') ingredientId: number,
+    @Param('ingredientId', ParseIntPipe) ingredientId: number,
     @Body() body: UpdateIngredientDto,
     @CurrentUser() user: IAuthenticatedUser,
   ): Promise<IngredientResponseDto> {
@@ -72,7 +73,7 @@ export class IngredientController {
   @Delete(':ingredientId')
   @HttpCode(HttpStatus.NO_CONTENT)
   deleteIngredient(
-    @Param('ingredientId') ingredientId: number,
+    @Param('ingredientId', ParseIntPipe) ingredientId: number,
     @CurrentUser() user: IAuthenticatedUser,
   ): Promise<void> {
     return this.ingredientService.deleteOne(ingredientId, user.userId);

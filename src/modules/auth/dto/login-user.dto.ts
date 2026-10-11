@@ -6,7 +6,7 @@ export class LoginUserDto {
   @IsEmail()
   @IsNotEmpty()
   @ApiProperty({ example: 'email@bitewise.com', required: true })
-  @Transform(({ value }) => value.trim())
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   readonly email: string;
 
   @IsString()
