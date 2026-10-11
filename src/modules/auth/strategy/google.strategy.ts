@@ -2,8 +2,10 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, Profile } from 'passport-google-oauth20';
+import { StateStore } from 'passport-oauth2';
 import googleOauthConfig from '../config/google-oauth.config.js';
 import { ISocialProfile } from '../interfaces/index.js';
+import { CookieStateStore } from './cookie-state.store.js';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy) {
@@ -16,6 +18,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
       clientSecret: googleConfiguration.clientSecret,
       callbackURL: googleConfiguration.callbackURL,
       scope: ['email', 'profile'],
+      store: new CookieStateStore() as StateStore,
     });
   }
 
