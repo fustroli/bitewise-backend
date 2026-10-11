@@ -8,7 +8,7 @@ NestJS API for BiteWise, backed by MySQL via TypeORM.
 - Users, ingredients, meals, meal plans
 - File storage via Google Cloud Storage
 - Request throttling, validation, and security headers (helmet)
-- Swagger API docs
+- Swagger API docs (disabled in production by default, see below)
 - Liveness/readiness health checks
 
 ## Requirements
@@ -51,6 +51,12 @@ npm run test        # unit tests
 npm run test:e2e    # e2e tests
 npm run test:cov    # coverage
 ```
+
+## API docs
+
+Swagger UI is served at `/api/docs` (OpenAPI JSON at `/api/docs-json`). It maps every route, so it is
+**off in production by default** (`NODE_ENV=production`) and on everywhere else. Override with
+`SWAGGER_ENABLED=true|false`, e.g. to debug a prod-like environment temporarily.
 
 ## Health checks
 

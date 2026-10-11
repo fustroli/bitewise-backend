@@ -2,12 +2,20 @@ import 'dotenv/config';
 
 export { assertValidEnv, validateEnv } from './env.validation.js';
 
+/** SWAGGER_ENABLED when set; otherwise on everywhere but production. */
+export function isSwaggerEnabled(env: NodeJS.ProcessEnv): boolean {
+  return env.SWAGGER_ENABLED
+    ? env.SWAGGER_ENABLED === 'true'
+    : env.NODE_ENV !== 'production';
+}
+
 export const config: IConfig = {
   PORT: +process.env.PORT,
   FRONTEND_URL: process.env.FRONTEND_URL,
   COOKIE_DOMAIN: process.env.COOKIE_DOMAIN,
   SALT_WORK_FACTOR: +process.env.SALT_WORK_FACTOR,
   NODE_ENV: process.env.NODE_ENV,
+  SWAGGER_ENABLED: isSwaggerEnabled(process.env),
   JWT: {
     ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET,
     ACCESS_TOKEN_EXPIRATION: process.env.ACCESS_TOKEN_EXPIRATION,
@@ -49,6 +57,8 @@ export interface IConfig {
   COOKIE_DOMAIN?: string;
   SALT_WORK_FACTOR: number;
   NODE_ENV: string;
+  // Serve /api/docs and the OpenAPI JSON; off in production unless opted in
+  SWAGGER_ENABLED: boolean;
   JWT: {
     ACCESS_TOKEN_SECRET: string;
     // Durations like "1h" / "7d" (ms / parse-duration format)

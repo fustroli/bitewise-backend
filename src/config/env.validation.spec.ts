@@ -36,7 +36,12 @@ describe('validateEnv', () => {
 
   it('treats optional keys left empty as unset', () => {
     expect(
-      validateEnv({ ...validEnv, COOKIE_DOMAIN: '', TRUST_PROXY_HOPS: '' }),
+      validateEnv({
+        ...validEnv,
+        COOKIE_DOMAIN: '',
+        TRUST_PROXY_HOPS: '',
+        SWAGGER_ENABLED: '',
+      }),
     ).toEqual([]);
   });
 
@@ -54,6 +59,7 @@ describe('validateEnv', () => {
     ['ACCESS_TOKEN_EXPIRATION', '0s'],
     ['THROTTLER_TTL', '1.5'],
     ['TRUST_PROXY_HOPS', '-1'],
+    ['SWAGGER_ENABLED', 'yes'],
     ['TYPEORM_PORT', '70000'],
     ['TYPEORM_PASSWORD', ''],
   ])('rejects %s=%p', (key, value) => {

@@ -27,7 +27,8 @@ async function bootstrap() {
 
   app.use(json({ limit: '20kb' }));
 
-  initializeSwagger(app);
+  //API docs expose every route: off in production by default
+  if (config.SWAGGER_ENABLED) initializeSwagger(app);
   await app.listen(port);
 }
 bootstrap();
