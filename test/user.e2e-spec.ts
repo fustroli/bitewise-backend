@@ -14,7 +14,7 @@ const { stubUser, User } =
   await import('../src/modules/user/entities/index.js');
 const { ProfileService } = await import('../src/modules/user/service/index.js');
 
-const credentials = ['hash', 'googleId', 'facebookId'];
+const credentials = ['hash', 'googleId'];
 
 describe('User responses (e2e)', () => {
   let app: INestApplication;
@@ -25,7 +25,6 @@ describe('User responses (e2e)', () => {
       stubUser({
         hash: 'secret-hash',
         googleId: 'google-123',
-        facebookId: 'facebook-123',
       }),
     );
 

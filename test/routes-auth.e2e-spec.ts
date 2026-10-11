@@ -17,8 +17,6 @@ const { IS_PUBLIC_KEY } =
   await import('../src/modules/auth/decorators/index.js');
 const { default: googleOauthConfig } =
   await import('../src/modules/auth/config/google-oauth.config.js');
-const { default: facebookOauthConfig } =
-  await import('../src/modules/auth/config/facebook-oauth.config.js');
 
 type TClass = new (...args: never[]) => unknown;
 
@@ -75,8 +73,6 @@ const PUBLIC_ROUTES = [
   'POST /api/auth/signout',
   'GET /api/auth/google/login',
   'GET /api/auth/google/callback',
-  'GET /api/auth/facebook/login',
-  'GET /api/auth/facebook/callback',
   'GET /api/health',
   'GET /api/health/ready',
 ];
@@ -116,11 +112,7 @@ describe('Route authentication (e2e)', () => {
       ],
     })
       // Every other dependency (feature services, repositories, Terminus)
-      .useMocker((token) =>
-        token === googleOauthConfig.KEY || token === facebookOauthConfig.KEY
-          ? fakeOAuth
-          : {},
-      )
+      .useMocker((token) => (token === googleOauthConfig.KEY ? fakeOAuth : {}))
       .compile();
 
     app = moduleRef.createNestApplication();

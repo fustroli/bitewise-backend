@@ -17,8 +17,7 @@ const { AuthController } =
   await import('../src/modules/auth/controller/index.js');
 const { SessionService } =
   await import('../src/modules/auth/services/index.js');
-const { FacebookAuthGuard, GoogleAuthGuard } =
-  await import('../src/modules/auth/guard/index.js');
+const { GoogleAuthGuard } = await import('../src/modules/auth/guard/index.js');
 const { stubUser, User } =
   await import('../src/modules/user/entities/index.js');
 const { config } = await import('../src/config/index.js');
@@ -62,8 +61,6 @@ describe('Auth cookies (e2e)', () => {
       providers: [{ provide: SessionService, useValue: sessions }],
     })
       .overrideGuard(GoogleAuthGuard)
-      .useValue(oauth)
-      .overrideGuard(FacebookAuthGuard)
       .useValue(oauth)
       .compile();
 
@@ -135,46 +132,43 @@ describe('Auth cookies (e2e)', () => {
     }
   });
 
-  describe.each(['google', 'facebook'])(
-    'GET /api/auth/%s/callback',
-    (provider) => {
-      const url = `/api/auth/${provider}/callback`;
+  describe.each(['google'])('GET /api/auth/%s/callback', (provider) => {
+    const url = `/api/auth/${provider}/callback`;
 
-      it('sets both cookies and redirects to the dashboard', async () => {
-        const res = await request(app.getHttpServer())
-          .get(url)
-          .expect(HttpStatus.FOUND);
+    it('sets both cookies and redirects to the dashboard', async () => {
+      const res = await request(app.getHttpServer())
+        .get(url)
+        .expect(HttpStatus.FOUND);
 
-        expect(sessions.signInSocial).toHaveBeenCalledWith(profile);
-        expect(res.headers.location).toBe(`${config.FRONTEND_URL}/dashboard`);
-        expect(cookie(res, 'accessToken')).toContain('accessToken=access-jwt;');
-        expect(cookie(res, 'refreshToken')).toContain(
-          'refreshToken=refresh-jwt;',
-        );
-      });
+      expect(sessions.signInSocial).toHaveBeenCalledWith(profile);
+      expect(res.headers.location).toBe(`${config.FRONTEND_URL}/dashboard`);
+      expect(cookie(res, 'accessToken')).toContain('accessToken=access-jwt;');
+      expect(cookie(res, 'refreshToken')).toContain(
+        'refreshToken=refresh-jwt;',
+      );
+    });
 
-      it('redirects to sign-in with password-first, setting no cookies, when the email needs a password sign-in', async () => {
-        sessions.signInSocial.mockRejectedValueOnce(
-          new ConflictException('Sign in with your password first'),
-        );
+    it('redirects to sign-in with password-first, setting no cookies, when the email needs a password sign-in', async () => {
+      sessions.signInSocial.mockRejectedValueOnce(
+        new ConflictException('Sign in with your password first'),
+      );
 
-        const res = await request(app.getHttpServer())
-          .get(url)
-          .expect(HttpStatus.FOUND);
+      const res = await request(app.getHttpServer())
+        .get(url)
+        .expect(HttpStatus.FOUND);
 
-        expect(res.headers.location).toBe(
-          `${config.FRONTEND_URL}/?error=password-first`,
-        );
-        expect(cookiesOf(res)).toEqual([]);
-      });
+      expect(res.headers.location).toBe(
+        `${config.FRONTEND_URL}/?error=password-first`,
+      );
+      expect(cookiesOf(res)).toEqual([]);
+    });
 
-      it('lets other failures through', async () => {
-        sessions.signInSocial.mockRejectedValueOnce(new Error('boom'));
+    it('lets other failures through', async () => {
+      sessions.signInSocial.mockRejectedValueOnce(new Error('boom'));
 
-        await request(app.getHttpServer())
-          .get(url)
-          .expect(HttpStatus.INTERNAL_SERVER_ERROR);
-      });
-    },
-  );
+      await request(app.getHttpServer())
+        .get(url)
+        .expect(HttpStatus.INTERNAL_SERVER_ERROR);
+    });
+  });
 });

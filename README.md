@@ -4,7 +4,7 @@ NestJS API for BiteWise, backed by MySQL via TypeORM.
 
 ## Features
 
-- Authentication (email/password + Google/Facebook OAuth) with JWT access/refresh tokens
+- Authentication (email/password + Google OAuth) with JWT access/refresh tokens
 - Users, ingredients, meals, meal plans
 - File storage via Google Cloud Storage
 - Request throttling, validation, and security headers (helmet)

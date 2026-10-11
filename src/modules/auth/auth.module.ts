@@ -1,8 +1,4 @@
-import {
-  FacebookStrategy,
-  GoogleStrategy,
-  JwtStrategy,
-} from './strategy/index.js';
+import { GoogleStrategy, JwtStrategy } from './strategy/index.js';
 
 import { APP_GUARD } from '@nestjs/core';
 import { AuthController } from './controller/auth.controller.js';
@@ -15,7 +11,6 @@ import { Session } from './entities/index.js';
 import { SessionService } from './services/index.js';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../user/entities/index.js';
-import facebookOauthConfig from './config/facebook-oauth.config.js';
 import googleOauthConfig from './config/google-oauth.config.js';
 
 @Module({
@@ -24,14 +19,12 @@ import googleOauthConfig from './config/google-oauth.config.js';
     PassportModule.register({}),
     JwtModule.register({}),
     ConfigModule.forFeature(googleOauthConfig),
-    ConfigModule.forFeature(facebookOauthConfig),
   ],
   controllers: [AuthController],
   providers: [
     SessionService,
     JwtStrategy,
     GoogleStrategy,
-    FacebookStrategy,
     // Every route needs an access token unless marked @Public()
     { provide: APP_GUARD, useClass: JwtGuard },
   ],

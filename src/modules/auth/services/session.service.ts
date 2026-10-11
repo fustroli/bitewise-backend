@@ -38,7 +38,6 @@ export interface ISessionResult {
 
 const PROVIDER_ID_COLUMN = {
   google: 'googleId',
-  facebook: 'facebookId',
 } as const satisfies Record<ISocialProfile['provider'], keyof User>;
 
 const INVALID_CREDENTIALS = 'Invalid email or password';

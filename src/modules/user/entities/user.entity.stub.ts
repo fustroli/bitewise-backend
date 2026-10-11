@@ -37,7 +37,6 @@ export function stubUser(override: Partial<User> = {}): User {
     },
     avatarUrl: null,
     googleId: null,
-    facebookId: null,
     createTimeStamp: new Date(),
     updateTimeStamp: new Date(),
     deleteTimeStamp: null,

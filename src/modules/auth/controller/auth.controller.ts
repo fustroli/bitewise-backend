@@ -20,7 +20,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { SessionService } from '../services/index.js';
 import { Throttle } from '@nestjs/throttler';
 import { Response } from 'express';
-import { FacebookAuthGuard, GoogleAuthGuard } from '../guard/index.js';
+import { GoogleAuthGuard } from '../guard/index.js';
 import { config } from '../../../config/index.js';
 import { BearerToken, CurrentUser, Public } from '../decorators/index.js';
 import { IAuthenticatedUser, ISocialProfile } from '../interfaces/index.js';
@@ -100,24 +100,6 @@ export class AuthController {
   @UseGuards(GoogleAuthGuard)
   @Redirect()
   async googleLoginCallback(
-    @Req() req,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    return this.socialCallback(req.user, res);
-  }
-
-  @Get('facebook/login')
-  @Public()
-  @UseGuards(FacebookAuthGuard)
-  async facebookLogin() {
-    // Initiates Facebook OAuth2 login
-  }
-
-  @Get('facebook/callback')
-  @Public()
-  @UseGuards(FacebookAuthGuard)
-  @Redirect()
-  async facebookLoginCallback(
     @Req() req,
     @Res({ passthrough: true }) res: Response,
   ) {
