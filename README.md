@@ -25,6 +25,13 @@ cp .env.example .env   # then fill in the values
 
 ## Running
 
+The schema is managed by migrations (see `docs/adr/0002-schema-managed-by-migrations.md`).
+Apply them before the first start and after pulling new ones:
+
+```bash
+npm run migration:run
+```
+
 ```bash
 # development
 npm run start

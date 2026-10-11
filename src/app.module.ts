@@ -5,7 +5,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { UserModule } from './modules/user/user.module.js';
-import databaseConfig from './app.development.config.js';
+import { dataSourceOptions } from './database/index.js';
 import { IngredientModule } from './modules/ingredient/ingredient.module.js';
 import { MealModule } from './modules/meal/meal.module.js';
 import { config } from './config/index.js';
@@ -15,7 +15,7 @@ import { HealthModule } from './modules/health/health.module.js';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
-    TypeOrmModule.forRoot(databaseConfig),
+    TypeOrmModule.forRoot(dataSourceOptions),
     ThrottlerModule.forRoot([
       {
         ttl: config.THROTTLER.TTL,

@@ -15,4 +15,5 @@ COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/dist ./dist
 USER node
 EXPOSE 8000
-CMD ["node", "dist/main.js"]
+# Pending migrations run before the app starts (ADR-0002); a failure stops the container
+CMD ["sh", "-c", "node node_modules/typeorm/cli.js migration:run -d dist/database/data-source.js && exec node dist/main.js"]
