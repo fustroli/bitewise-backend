@@ -11,9 +11,12 @@ import {
 } from '../../../../test/int/test-database.js';
 import { toConflict } from '../../../common/filters/index.js';
 import { EOrderDirection } from '../../../common/pagination/index.js';
+import { Ingredient } from '../../ingredient/entities/index.js';
+import { EUnit } from '../../ingredient/enum/index.js';
 import { Meal } from '../../meal/entities/index.js';
 import { User } from '../../user/entities/index.js';
 import { MealPlan, MealPlanMeal } from '../entities/index.js';
+import { serializeMealPlan } from '../serializers/index.js';
 import { MealPlanService } from './meal-plan.service.js';
 
 const MISSING_ID = 999_999;
@@ -165,6 +168,60 @@ describe('MealPlanService', () => {
       expect(page.count).toBe(names.length);
       expect(page.data.map((mp) => mp.name)).toEqual([...names].sort());
       expect(page.data[0].mealPlanMeals[0].meal.name).toBe('Oats');
+    });
+
+    it('pages Meal plans with their Meals and Ingredients, not the Owner', async () => {
+      const apple = await dataSource.getRepository(Ingredient).save({
+        name: 'Apple',
+        protein: 1,
+        totalFat: 1,
+        saturatedFat: 0,
+        totalCarbohydrates: 1,
+        sugar: 0,
+        dietaryFiber: 0,
+        calories: 10,
+        unit: EUnit.HUNDRED_GRAMS,
+        user: { id: owner.id },
+      });
+      const mealWithApple = (name: string) =>
+        dataSource.getRepository(Meal).save({
+          name,
+          user: { id: owner.id },
+          mealIngredients: [{ ingredient: { id: apple.id }, quantity: 2 }],
+        });
+      const oats = await mealWithApple('Oats');
+      const salad = await mealWithApple('Salad');
+      const names = ['Monday', 'Tuesday', 'Wednesday'];
+      for (const name of names) {
+        await mealPlans.createOne(
+          { name, mealIds: [oats.id, salad.id] },
+          owner.id,
+        );
+      }
+
+      const page = await mealPlans.getAll(owner.id, {
+        orderBy: 'name',
+        limit: 2,
+        offset: 1,
+      });
+
+      expect(page.count).toBe(names.length);
+      expect(page.data.map((mp) => mp.name)).toEqual(names.slice(1));
+      for (const mealPlan of page.data) {
+        expect(mealPlan.user).toBeUndefined();
+        expect(mealPlan.userId).toBe(owner.id);
+        const { meals } = serializeMealPlan(mealPlan);
+        expect(meals.map((m) => m.name).sort()).toEqual(['Oats', 'Salad']);
+        for (const meal of meals) {
+          expect(meal.mealIngredients).toEqual([
+            expect.objectContaining({
+              ingredientId: apple.id,
+              ingredientName: 'Apple',
+              quantity: 2,
+            }),
+          ]);
+        }
+      }
     });
 
     it("searches the Owner's Meal plans by name", async () => {

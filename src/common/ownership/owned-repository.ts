@@ -27,6 +27,8 @@ export interface IOwnedRepositoryConfig<T> {
   label: string;
   // Loaded by findOwnedOrFail and listOwned unless overridden per call
   relations?: FindOptionsRelations<T>;
+  // 'query' loads each relation level in its own query instead of one join
+  relationLoadStrategy?: 'join' | 'query';
   // Columns a client may pass as `orderBy`; anything else is a 400
   sortable: readonly (keyof T & string)[];
 }
@@ -50,6 +52,7 @@ export class OwnedRepository<T extends IOwnedEntity> {
     const entity = await this.repository.findOne({
       where: this.ownedWhere(ownerId, { id }),
       relations,
+      relationLoadStrategy: this.config.relationLoadStrategy,
     });
 
     if (!entity) {
@@ -66,6 +69,7 @@ export class OwnedRepository<T extends IOwnedEntity> {
     const entities = await this.repository.find({
       where: this.ownedWhere(ownerId, { id: In(uniqueIds) }),
       relations: this.config.relations,
+      relationLoadStrategy: this.config.relationLoadStrategy,
     });
 
     const missing = uniqueIds.filter(
@@ -87,6 +91,7 @@ export class OwnedRepository<T extends IOwnedEntity> {
     const [data, count] = await this.repository.findAndCount({
       where: this.ownedWhere(ownerId, this.search(pagination)),
       relations: this.config.relations,
+      relationLoadStrategy: this.config.relationLoadStrategy,
       order: this.order(pagination),
       take: Math.min(pagination.limit ?? DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT),
       skip: pagination.offset,
