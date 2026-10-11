@@ -1,5 +1,7 @@
 import 'dotenv/config';
 
+export { assertValidEnv, validateEnv } from './env.validation.js';
+
 export const config: IConfig = {
   PORT: +process.env.PORT,
   FRONTEND_URL: process.env.FRONTEND_URL,

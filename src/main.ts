@@ -2,13 +2,16 @@ import cookieParser from 'cookie-parser';
 
 import { AppModule } from './app.module.js';
 import { NestFactory } from '@nestjs/core';
-import { config } from './config/index.js';
+import { assertValidEnv, config } from './config/index.js';
 import helmet from 'helmet';
 import { initializeSwagger } from './swagger/index.js';
 import { json } from 'express';
 import { setupApp } from './app.setup.js';
 
 async function bootstrap() {
+  //refuse to boot on missing/invalid env, listing every bad key
+  assertValidEnv();
+
   const app = await NestFactory.create(AppModule);
   const port = config.PORT;
 
