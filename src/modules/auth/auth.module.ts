@@ -8,6 +8,7 @@ import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { JwtGuard } from './guard/index.js';
 import { Session } from './entities/index.js';
+import { SessionCleanupTask } from './tasks/index.js';
 import { SessionService } from './services/index.js';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../user/entities/index.js';
@@ -23,6 +24,7 @@ import googleOauthConfig from './config/google-oauth.config.js';
   controllers: [AuthController],
   providers: [
     SessionService,
+    SessionCleanupTask,
     JwtStrategy,
     GoogleStrategy,
     // Every route needs an access token unless marked @Public()

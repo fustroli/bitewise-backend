@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './modules/auth/auth.module.js';
@@ -16,6 +17,7 @@ import { HealthModule } from './modules/health/health.module.js';
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     TypeOrmModule.forRoot(dataSourceOptions),
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
       {
         ttl: config.THROTTLER.TTL,
