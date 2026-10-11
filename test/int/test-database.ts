@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { DataSource, DataSourceOptions } from 'typeorm';
+import { migrations } from '../../src/database/migrations/index.js';
 import { Session } from '../../src/modules/auth/entities/index.js';
 import { Ingredient } from '../../src/modules/ingredient/entities/index.js';
 import { Meal, MealIngredient } from '../../src/modules/meal/entities/index.js';
@@ -29,6 +30,8 @@ function options(database?: string): DataSourceOptions {
     password: process.env.INT_DB_ROOT_PASSWORD,
     database,
     entities,
+    migrations,
+    migrationsTransactionMode: 'each',
     logging: false,
   };
 }
@@ -45,11 +48,11 @@ export async function createTestDatabase(): Promise<string> {
   return name;
 }
 
-/** Connects to `database`, synchronizing the schema (test-only). */
+/** Connects to `database`, running pending migrations (as in production). */
 export function connectTestDatabase(database: string): Promise<DataSource> {
   return new DataSource({
     ...options(database),
-    synchronize: true,
+    migrationsRun: true,
   }).initialize();
 }
 

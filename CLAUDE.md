@@ -48,6 +48,7 @@ src/
     pagination/               # Shared pagination DTO + query-building helpers
     transformers/              # TypeORM column transformers (e.g. decimalTransformer)
   config/                      # Env-driven app config (src/config/index.ts)
+  database/                    # dataSourceOptions (Nest + CLI), data-source.ts (CLI entry), migrations/
   modules/
     auth/                      # Session entity + SessionService (sign-up/in, refresh rotation, sign-out,
                                #   change-password), cookie helper, JWT/Google/Facebook strategies & guards
@@ -61,7 +62,6 @@ src/
   types/                       # Ambient type augmentations (Express.Request.user, multer types)
   utils/                       # Misc constants
 app.module.ts                  # Root module
-app.development.config.ts      # TypeORM datasource config (dev)
 main.ts                        # Bootstrap (helmet, cookie-parser, CORS, validation pipe)
 ```
 
@@ -127,6 +127,13 @@ npm run start:dev              # Watch mode
 npm run build
 npm run start:prod
 
+# Migrations (all but create build first; the CLI runs against dist/)
+npm run migration:generate -- src/database/migrations/<Name>   # diff entities vs DB
+npm run migration:create -- src/database/migrations/<Name>     # empty (data changes)
+npm run migration:run
+npm run migration:revert       # local only
+npm run migration:show
+
 # Testing
 npm run test                   # Unit tests (ESM, via --experimental-vm-modules)
 npm run test:cov               # Coverage report
@@ -141,6 +148,24 @@ npm run format
 npm run docker:dev
 npm run docker:dev:down
 ```
+
+---
+
+## Migrations
+
+The schema is owned by migrations only; `synchronize` is off everywhere (ADR-0002). Int tests
+run the migrations too, and the Docker image runs `migration:run` before starting the app.
+
+- Entity change → `migration:generate` against a dev DB that is fully migrated, then:
+  - Add the class to the `migrations` array in `src/database/migrations/index.ts` (not globbed).
+  - Review the SQL by hand and run `npx prettier --write` on the file.
+  - If it writes `typeorm_metadata` rows (generated columns, ADR-0001), replace the hardcoded
+    database name with `await queryRunner.getCurrentDatabase()` (see `InitialSchema`).
+- `schema-drift.int-spec.ts` fails if the entities and the migrations disagree, or if `down()` doesn't
+  revert cleanly.
+- A migration is never edited once merged. Prod is forward-only; `down()` is for local use.
+- Breaking changes (renames, new NOT NULL columns) use expand/contract: add new → backfill →
+  deploy → drop old in a later migration. MySQL DDL auto-commits, so keep each migration small.
 
 ---
 
