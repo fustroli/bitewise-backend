@@ -89,3 +89,29 @@ Fill in from the run (#75). Environment: <!-- instance type, MySQL version, comm
 | Soak     |     |     |     |     |        | memory trend:   |
 
 First bottleneck: <!-- e.g. CPU (bcrypt), DB pool, a slow query -->
+
+### Local reference (2026-10-11, commit `5be3c34`)
+
+Not a capacity number: compare it only with runs on the same setup. Laptop (i5-1235U); app
+pinned to one P-core's 2 threads (`taskset -c 0,1`, ~t3.micro's 2 vCPUs, but faster and
+without CPU credits); MySQL 8.0 in Docker Desktop with the stack's low-mem settings (128M
+buffer pool, `max_connections=30`), not pinned; native k6 on the other cores; no nginx.
+500 Users provisioned.
+
+| Scenario           | VUs    | RPS      | p95   | p99   | Errors | Notes                              |
+| ------------------ | ------ | -------- | ----- | ----- | ------ | ---------------------------------- |
+| Smoke              | 2      | 1        | 40ms  | 49ms  | 0%     |                                    |
+| Load               | 50     | 23       | 31ms  | 59ms  | 0%     | node CPU avg 17%                   |
+| Stress             | 50→500 | ~200 max | 1.01s | 1.22s | 0%     | saturates at ~300 VUs / ~150 RPS   |
+| Soak (20m, not 70) | 30     | 15       | 29ms  | 38ms  | 0%     | RSS flat (node 461MB, MySQL 216MB) |
+
+First bottleneck: **the Node main thread** (node pegged at ~105% = one core; MySQL ≤ 60%
+CPU, pool never past its 10 connections, no errors). A CPU profile at 250 VUs puts ~40% of
+main-thread time in TypeORM (query building, alias mapping, hydration), mysql2 7%, GC 6%,
+class-transformer 4%; Express/Nest/pino/compression/throttler ~1% each. Contributing:
+
+- Every authenticated request costs 2 queries before the handler: `SessionService.findActive`
+  (`findOne` + `relations` → TypeORM's DISTINCT-ids query + the real one).
+- `GET /meal-plan` (list or one) = 10 queries with `relationLoadStrategy: 'query'`, plus the
+  2 auth ones; `PATCH /meal` = 15 (two reloads, one `INSERT` per Meal ingredient).
+- Sign-in (bcrypt cost 12) ~700ms avg while 250 sign in at once.
