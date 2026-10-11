@@ -110,6 +110,55 @@ describe('User responses (e2e)', () => {
         .expect(HttpStatus.BAD_REQUEST);
   });
 
+  it.each([
+    { bodyStats: null },
+    { bodyStats: { heightCm: 99 } },
+    { bodyStats: { heightCm: 251 } },
+    { bodyStats: { heightCm: 170.5 } },
+    { bodyStats: { weightKg: 29.9 } },
+    { bodyStats: { weightKg: 300.1 } },
+    { bodyStats: { weightKg: 70.25 } },
+    { bodyStats: { weightKg: '70' } },
+    { bodyStats: { sex: 'OTHER' } },
+    { bodyStats: { activityLevel: 'LAZY' } },
+  ])('PATCH /api/users/me rejects Body stats %o with 400', async (body) => {
+    await request(app.getHttpServer())
+      .patch('/api/users/me')
+      .send(body)
+      .expect(HttpStatus.BAD_REQUEST);
+  });
+
+  it('PATCH /api/users/me accepts Body stats in range and null fields', async () => {
+    for (const bodyStats of [
+      {
+        sex: 'FEMALE',
+        heightCm: 100,
+        weightKg: 30,
+        activityLevel: 'EXTRA_ACTIVE',
+      },
+      { heightCm: 250, weightKg: 300 },
+      { weightKg: 72.5 },
+      { sex: null, heightCm: null, weightKg: null, activityLevel: null },
+    ])
+      await request(app.getHttpServer())
+        .patch('/api/users/me')
+        .send({ bodyStats })
+        .expect(HttpStatus.OK);
+  });
+
+  it('GET /api/users/me returns Body stats', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/api/users/me')
+      .expect(HttpStatus.OK);
+
+    expect(res.body.bodyStats).toEqual({
+      sex: null,
+      heightCm: null,
+      weightKg: null,
+      activityLevel: null,
+    });
+  });
+
   it('PATCH /api/users/me accepts null fields and never returns credentials', async () => {
     const res = await request(app.getHttpServer())
       .patch('/api/users/me')
