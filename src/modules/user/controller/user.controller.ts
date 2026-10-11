@@ -11,21 +11,34 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { ProfileService } from '../service/index.js';
+import { ProfileService, StatisticsService } from '../service/index.js';
 import { CurrentUser } from '../../auth/decorators/index.js';
 import { IAuthenticatedUser } from '../../auth/interfaces/index.js';
-import { ProfilePatchDto, UserResponseDto } from '../dto/index.js';
+import {
+  ProfilePatchDto,
+  StatisticsResponseDto,
+  UserResponseDto,
+} from '../dto/index.js';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('users')
 @Controller('users')
 export class UserController {
-  constructor(private readonly profiles: ProfileService) {}
+  constructor(
+    private readonly profiles: ProfileService,
+    private readonly statistics: StatisticsService,
+  ) {}
 
   @Get('me')
   @ApiOkResponse({ type: UserResponseDto })
   getMe(@CurrentUser() { userId }: IAuthenticatedUser) {
     return this.profiles.getProfile(userId);
+  }
+
+  @Get('me/statistics')
+  @ApiOkResponse({ type: StatisticsResponseDto })
+  getStatistics(@CurrentUser() { userId }: IAuthenticatedUser) {
+    return this.statistics.getStatistics(userId);
   }
 
   @Patch('me')
