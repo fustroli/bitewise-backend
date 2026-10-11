@@ -220,6 +220,25 @@ describe('MealService', () => {
       expect(page.data.map((m) => m.name)).toEqual([...names].sort());
       expect(page.data[0].mealIngredients[0].ingredient.name).toBe('Apple');
     });
+
+    it("searches the Owner's Meals by name", async () => {
+      const apple = await createIngredient('Apple', owner);
+      for (const name of ['Apple pie', 'Fruit salad', 'Toffee apple']) {
+        await meals.createOne(
+          { name, mealIngredients: [{ ingredientId: apple.id, quantity: 1 }] },
+          owner.id,
+        );
+      }
+
+      const page = await meals.getAll(owner.id, {
+        search: 'APPLE',
+        orderBy: 'name',
+      });
+
+      const matches = ['Apple pie', 'Toffee apple'];
+      expect(page.count).toBe(matches.length);
+      expect(page.data.map((m) => m.name)).toEqual(matches);
+    });
   });
 
   describe('updateOne', () => {

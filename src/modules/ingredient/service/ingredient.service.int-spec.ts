@@ -54,6 +54,24 @@ describe('IngredientService', () => {
     stranger = await createUser(dataSource);
   });
 
+  describe('getAll', () => {
+    it("searches the Owner's Ingredients by name", async () => {
+      for (const name of ['Apple', 'Pear', 'Pineapple']) {
+        await createIngredient(name, owner);
+      }
+      await createIngredient('Crab apple', stranger);
+
+      const page = await ingredients.getAll(owner.id, {
+        search: 'apple',
+        orderBy: 'name',
+      });
+
+      const matches = ['Apple', 'Pineapple'];
+      expect(page.count).toBe(matches.length);
+      expect(page.data.map((i) => i.name)).toEqual(matches);
+    });
+  });
+
   describe('deleteOne', () => {
     it('deletes an Ingredient no Meal uses', async () => {
       const apple = await createIngredient('Apple', owner);

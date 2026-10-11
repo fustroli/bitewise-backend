@@ -1,10 +1,19 @@
-import { IsInt, Max, Min, IsOptional, IsString, IsEnum } from 'class-validator';
-import { Type } from 'class-transformer';
+import {
+  IsInt,
+  Max,
+  Min,
+  IsOptional,
+  IsString,
+  IsEnum,
+  MaxLength,
+} from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import { EOrderDirection } from './enums/index.js';
 import { ApiProperty } from '@nestjs/swagger';
 
 export const DEFAULT_PAGE_LIMIT = 20;
 export const MAX_PAGE_LIMIT = 100;
+export const MAX_SEARCH_LENGTH = 100;
 
 export class PaginationDto {
   @IsOptional()
@@ -43,4 +52,15 @@ export class PaginationDto {
     required: false,
   })
   orderDirection?: EOrderDirection;
+
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @MaxLength(MAX_SEARCH_LENGTH)
+  @ApiProperty({
+    example: 'apple',
+    required: false,
+    description: `Case- and accent-insensitive substring match on name, max ${MAX_SEARCH_LENGTH} chars`,
+  })
+  search?: string;
 }
