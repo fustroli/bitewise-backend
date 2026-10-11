@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import type { LevelWithSilent } from 'pino';
 
 export { assertValidEnv, validateEnv } from './env.validation.js';
 
@@ -9,6 +10,13 @@ export function isSwaggerEnabled(env: NodeJS.ProcessEnv): boolean {
     : env.NODE_ENV !== 'production';
 }
 
+/** LOG_LEVEL when set; otherwise silent under test, debug in development, info elsewhere. */
+export function logLevel(env: NodeJS.ProcessEnv): LevelWithSilent {
+  if (env.LOG_LEVEL) return env.LOG_LEVEL as LevelWithSilent;
+  if (env.NODE_ENV === 'test') return 'silent';
+  return env.NODE_ENV === 'development' ? 'debug' : 'info';
+}
+
 export const config: IConfig = {
   PORT: +process.env.PORT,
   FRONTEND_URL: process.env.FRONTEND_URL,
@@ -16,6 +24,7 @@ export const config: IConfig = {
   SALT_WORK_FACTOR: +process.env.SALT_WORK_FACTOR,
   NODE_ENV: process.env.NODE_ENV,
   SWAGGER_ENABLED: isSwaggerEnabled(process.env),
+  LOG_LEVEL: logLevel(process.env),
   JWT: {
     ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET,
     ACCESS_TOKEN_EXPIRATION: process.env.ACCESS_TOKEN_EXPIRATION,
@@ -59,6 +68,7 @@ export interface IConfig {
   NODE_ENV: string;
   // Serve /api/docs and the OpenAPI JSON; off in production unless opted in
   SWAGGER_ENABLED: boolean;
+  LOG_LEVEL: LevelWithSilent;
   JWT: {
     ACCESS_TOKEN_SECRET: string;
     // Durations like "1h" / "7d" (ms / parse-duration format)

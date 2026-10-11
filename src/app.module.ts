@@ -11,10 +11,13 @@ import { MealModule } from './modules/meal/meal.module.js';
 import { config } from './config/index.js';
 import { MealPlanModule } from './modules/meal-plan/meal-plan.module.js';
 import { HealthModule } from './modules/health/health.module.js';
+import { LoggerModule } from 'nestjs-pino';
+import { loggerParams } from './common/logging/index.js';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+    LoggerModule.forRoot(loggerParams()),
     TypeOrmModule.forRoot(dataSourceOptions),
     ThrottlerModule.forRoot([
       {

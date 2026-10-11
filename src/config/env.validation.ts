@@ -69,6 +69,10 @@ class EnvironmentVariables {
   @IsIn(['true', 'false'])
   SWAGGER_ENABLED?: string;
 
+  @IsOptional()
+  @IsIn(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
+  LOG_LEVEL?: string;
+
   @IsString()
   @MinLength(MIN_SECRET_LENGTH)
   ACCESS_TOKEN_SECRET: string;
