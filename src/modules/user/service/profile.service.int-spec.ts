@@ -32,6 +32,9 @@ const EMPTY_BODY_STATS = {
   heightCm: null,
   weightKg: null,
   activityLevel: null,
+  neckCm: null,
+  waistCm: null,
+  hipCm: null,
 };
 
 describe('ProfileService', () => {
@@ -151,17 +154,21 @@ describe('ProfileService', () => {
       heightCm: 170,
       weightKg: 64.5,
       activityLevel: EActivityLevel.MODERATE,
+      neckCm: 32.5,
+      waistCm: 71,
+      hipCm: 96.5,
     };
 
     beforeEach(() =>
       profiles.updateProfile(user.id, { bodyStats: BODY_STATS }),
     );
 
-    it('stores every field, weight as a number with one decimal', async () => {
+    it('stores every field, decimals as numbers', async () => {
       const { bodyStats } = await profiles.getProfile(user.id);
 
       expect(bodyStats).toEqual(BODY_STATS);
       expect(typeof bodyStats.weightKg).toBe('number');
+      expect(typeof bodyStats.neckCm).toBe('number');
     });
 
     it('leaves missing fields unchanged', async () => {
@@ -171,9 +178,16 @@ describe('ProfileService', () => {
       expect(bodyStats).toEqual({ ...BODY_STATS, weightKg: 63.2 });
     });
 
+    it('leaves missing measurements unchanged', async () => {
+      await profiles.updateProfile(user.id, { bodyStats: { waistCm: 74.5 } });
+
+      const { bodyStats } = await profiles.getProfile(user.id);
+      expect(bodyStats).toEqual({ ...BODY_STATS, waistCm: 74.5 });
+    });
+
     it('clears a field set to null', async () => {
       await profiles.updateProfile(user.id, {
-        bodyStats: { weightKg: null, activityLevel: null },
+        bodyStats: { weightKg: null, activityLevel: null, hipCm: null },
       });
 
       const { bodyStats } = await profiles.getProfile(user.id);
@@ -181,6 +195,7 @@ describe('ProfileService', () => {
         ...BODY_STATS,
         weightKg: null,
         activityLevel: null,
+        hipCm: null,
       });
     });
 
@@ -252,7 +267,12 @@ describe('ProfileService', () => {
       await profiles.updateProfile(user.id, {
         personalInformation: { userName, firstName: 'John' },
         socialProfiles: { linkedin: 'https://linkedin.com/in/john' },
-        bodyStats: { sex: ESex.MALE, heightCm: 180, weightKg: 80.5 },
+        bodyStats: {
+          sex: ESex.MALE,
+          heightCm: 180,
+          weightKg: 80.5,
+          neckCm: 38,
+        },
         notificationSettings: {
           defaultEmailAddress: 'john@example.com',
           marketingEmail: true,

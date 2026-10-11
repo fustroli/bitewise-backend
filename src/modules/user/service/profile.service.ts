@@ -72,6 +72,9 @@ export class ProfileService {
           heightCm: null,
           weightKg: null,
           activityLevel: null,
+          neckCm: null,
+          waistCm: null,
+          hipCm: null,
         },
         notificationSettings: {
           defaultEmailAddress: null,

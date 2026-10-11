@@ -21,4 +21,31 @@ export class BodyStats {
 
   @Column({ type: 'enum', enum: EActivityLevel, nullable: true })
   activityLevel: EActivityLevel | null;
+
+  @Column({
+    type: 'decimal',
+    precision: 4,
+    scale: 1,
+    nullable: true,
+    transformer: nullableDecimalTransformer,
+  })
+  neckCm: number | null;
+
+  @Column({
+    type: 'decimal',
+    precision: 4,
+    scale: 1,
+    nullable: true,
+    transformer: nullableDecimalTransformer,
+  })
+  waistCm: number | null;
+
+  @Column({
+    type: 'decimal',
+    precision: 4,
+    scale: 1,
+    nullable: true,
+    transformer: nullableDecimalTransformer,
+  })
+  hipCm: number | null;
 }
