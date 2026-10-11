@@ -116,7 +116,8 @@ export class AuthController {
   }
 
   // A browser navigation: a known refusal lands on the frontend, not a JSON page
-  private async socialCallback(profile: ISocialProfile, res: Response) {
+  private async socialCallback(profile: ISocialProfile | false, res: Response) {
+    if (!profile) return { url: `${config.FRONTEND_URL}/?error=oauth-failed` };
     try {
       const { tokens } = await this.sessions.signInSocial(profile);
       setSessionCookies(res, tokens);

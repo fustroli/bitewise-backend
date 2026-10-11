@@ -4,6 +4,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { HttpAdapterHost, Reflector } from '@nestjs/core';
+import cookieParser from 'cookie-parser';
 import { DuplicateEntryFilter } from './common/filters/index.js';
 import { config } from './config/index.js';
 
@@ -14,6 +15,9 @@ export function setupApp(app: INestApplication) {
     .getHttpAdapter()
     .getInstance()
     .set('trust proxy', config.TRUST_PROXY_HOPS);
+
+  //req.cookies (the OAuth state cookie)
+  app.use(cookieParser());
 
   //serve all routes under /api
   app.setGlobalPrefix('api');

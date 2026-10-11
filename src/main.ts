@@ -1,5 +1,3 @@
-import cookieParser from 'cookie-parser';
-
 import { AppModule } from './app.module.js';
 import { NestFactory } from '@nestjs/core';
 import { assertValidEnv, config } from './config/index.js';
@@ -19,8 +17,6 @@ async function bootstrap() {
 
   //secure app by setting HTTP response headers
   app.use(helmet());
-
-  app.use(cookieParser());
 
   //enable cors
   app.enableCors({ origin: config.FRONTEND_URL, credentials: true });
