@@ -14,6 +14,8 @@ function ownedIn(manager: EntityManager) {
     mealPlans: new OwnedRepository(manager.getRepository(MealPlan), {
       label: 'meal plan',
       relations: MEAL_PLAN_RELATIONS,
+      // avoid one 4-level join multiplying rows per page
+      relationLoadStrategy: 'query',
       sortable: ['name', 'createTimeStamp', 'updateTimeStamp'],
     }),
     meals: new OwnedRepository(manager.getRepository(Meal), {
