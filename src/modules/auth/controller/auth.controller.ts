@@ -75,17 +75,17 @@ export class AuthController {
     return user;
   }
 
+  // Always clears the cookies: a missing, expired or bad token still signs out
   @Post('signout')
   @Public()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiBearerAuth()
   async signout(
-    @BearerToken() refreshToken: string,
+    @BearerToken({ optional: true }) refreshToken: string | undefined,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const { sid } = await this.sessions.verifyRefreshToken(refreshToken);
-    await this.sessions.signOut(sid);
     clearSessionCookies(res);
+    await this.sessions.signOut(refreshToken);
   }
 
   @Get('google/login')

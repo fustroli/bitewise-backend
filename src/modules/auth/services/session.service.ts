@@ -143,8 +143,27 @@ export class SessionService {
     return { user: session.user, tokens };
   }
 
-  async signOut(sid: string): Promise<void> {
-    await this.sessions.delete(sid);
+  /**
+   * Ends the refresh token's Session. Expiry is ignored, so a stale token can
+   * still end its Session; a missing, forged or malformed one ends nothing.
+   */
+  async signOut(refreshToken: string | undefined): Promise<void> {
+    if (!refreshToken) return;
+
+    let claims: IJwtClaims;
+    try {
+      claims = await this.jwt.verifyAsync<IJwtClaims>(refreshToken, {
+        secret: config.JWT.REFRESH_TOKEN_SECRET,
+        ignoreExpiration: true,
+      });
+    } catch {
+      return;
+    }
+
+    const { sub, sid } = claims;
+    if (typeof sid !== 'string' || typeof sub !== 'number') return;
+    // Scoped to the token's User as well as its Session
+    await this.sessions.delete({ id: sid, user: { id: sub } });
   }
 
   /** Changes the password and ends every other Session of the User. */

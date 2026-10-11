@@ -105,7 +105,6 @@ describe('Route authentication (e2e)', () => {
           provide: SessionService,
           useValue: {
             rotate: async () => ({ user: {}, tokens: {} }),
-            verifyRefreshToken: async () => ({ sub: 1, sid: 'session-1' }),
             signOut: async () => undefined,
           },
         },

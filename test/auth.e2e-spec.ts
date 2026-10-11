@@ -4,7 +4,9 @@ import {
   HttpStatus,
   INestApplication,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 
@@ -18,12 +20,37 @@ const { AuthController } =
 const { SessionService } =
   await import('../src/modules/auth/services/index.js');
 const { GoogleAuthGuard } = await import('../src/modules/auth/guard/index.js');
+const { Session } = await import('../src/modules/auth/entities/index.js');
 const { stubUser, User } =
   await import('../src/modules/user/entities/index.js');
 const { config } = await import('../src/config/index.js');
 
 const tokens = { accessToken: 'access-jwt', refreshToken: 'refresh-jwt' };
 const credentials = { email: 'test@mail.com', password: 'StrongPassword1!' };
+
+// Stands in for the OAuth round trip: the strategy's profile is on req.user
+const profile = { provider: 'google', providerId: 'g-1' };
+const oauth = {
+  canActivate: (ctx: ExecutionContext) => {
+    ctx.switchToHttp().getRequest().user = profile;
+    return true;
+  },
+};
+
+const cookiesOf = (res: request.Response): string[] =>
+  [res.headers['set-cookie'] ?? []].flat();
+
+const cookie = (res: request.Response, name: string) =>
+  cookiesOf(res).find((c) => c.startsWith(`${name}=`));
+
+const expectCleared = (res: request.Response) => {
+  for (const name of ['accessToken', 'refreshToken']) {
+    const set = cookie(res, name);
+    expect(set).toContain(`${name}=;`);
+    expect(set).toContain('Expires=Thu, 01 Jan 1970 00:00:00 GMT');
+    expect(set).toContain('Path=/');
+  }
+};
 
 describe('Auth cookies (e2e)', () => {
   let app: INestApplication;
@@ -34,25 +61,8 @@ describe('Auth cookies (e2e)', () => {
   const sessions = {
     signIn: jest.fn(async () => ({ user: user(), tokens })),
     rotate: jest.fn(async () => ({ user: user(), tokens })),
-    verifyRefreshToken: jest.fn(async () => ({ sub: 1, sid: 'sid-1' })),
-    signOut: jest.fn(async () => undefined),
     signInSocial: jest.fn(async () => ({ user: user(), tokens })),
   };
-
-  // Stands in for the OAuth round trip: the strategy's profile is on req.user
-  const profile = { provider: 'google', providerId: 'g-1' };
-  const oauth = {
-    canActivate: (ctx: ExecutionContext) => {
-      ctx.switchToHttp().getRequest().user = profile;
-      return true;
-    },
-  };
-
-  const cookiesOf = (res: request.Response): string[] =>
-    [res.headers['set-cookie'] ?? []].flat();
-
-  const cookie = (res: request.Response, name: string) =>
-    cookiesOf(res).find((c) => c.startsWith(`${name}=`));
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -116,22 +126,6 @@ describe('Auth cookies (e2e)', () => {
     expect(cookiesOf(res)).toEqual([]);
   });
 
-  it('POST /api/auth/signout ends the Session and clears both cookies', async () => {
-    const res = await request(app.getHttpServer())
-      .post('/api/auth/signout')
-      .set('Authorization', 'Bearer refresh-jwt')
-      .expect(HttpStatus.NO_CONTENT);
-
-    expect(sessions.verifyRefreshToken).toHaveBeenCalledWith('refresh-jwt');
-    expect(sessions.signOut).toHaveBeenCalledWith('sid-1');
-    for (const name of ['accessToken', 'refreshToken']) {
-      const set = cookie(res, name);
-      expect(set).toContain(`${name}=;`);
-      expect(set).toContain('Expires=Thu, 01 Jan 1970 00:00:00 GMT');
-      expect(set).toContain('Path=/');
-    }
-  });
-
   describe.each(['google'])('GET /api/auth/%s/callback', (provider) => {
     const url = `/api/auth/${provider}/callback`;
 
@@ -170,5 +164,93 @@ describe('Auth cookies (e2e)', () => {
         .get(url)
         .expect(HttpStatus.INTERNAL_SERVER_ERROR);
     });
+  });
+});
+
+// The real SessionService over a stubbed Session repository: what reaches the
+// database is the assertion
+describe('POST /api/auth/signout (e2e)', () => {
+  let app: INestApplication;
+  const jwt = new JwtService();
+  const sessionRepo = { delete: jest.fn(async () => ({ affected: 1 })) };
+
+  const refreshToken = (claims: object, secret = 'refresh-secret') =>
+    jwt.signAsync({ jti: 'jti-1', ...claims }, { secret });
+
+  const signout = (token?: string) => {
+    const req = request(app.getHttpServer()).post('/api/auth/signout');
+    return token ? req.set('Authorization', `Bearer ${token}`) : req;
+  };
+
+  beforeAll(async () => {
+    config.JWT.REFRESH_TOKEN_SECRET = 'refresh-secret';
+
+    const moduleRef = await Test.createTestingModule({
+      imports: [PassportModule.register({})],
+      controllers: [AuthController],
+      providers: [
+        SessionService,
+        { provide: JwtService, useValue: jwt },
+        { provide: getRepositoryToken(User), useValue: {} },
+        { provide: getRepositoryToken(Session), useValue: sessionRepo },
+      ],
+    })
+      .overrideGuard(GoogleAuthGuard)
+      .useValue(oauth)
+      .compile();
+
+    app = moduleRef.createNestApplication();
+    setupApp(app);
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  beforeEach(() => jest.clearAllMocks());
+
+  it('ends the Session and clears both cookies', async () => {
+    const token = await refreshToken({ sub: 1, sid: 'sid-1' });
+
+    const res = await signout(token).expect(HttpStatus.NO_CONTENT);
+
+    expect(sessionRepo.delete).toHaveBeenCalledWith({
+      id: 'sid-1',
+      user: { id: 1 },
+    });
+    expectCleared(res);
+  });
+
+  it('ends the Session of an expired refresh token and clears both cookies', async () => {
+    const token = await refreshToken({
+      sub: 1,
+      sid: 'sid-1',
+      // Expired at the epoch's first second
+      exp: 1,
+    });
+
+    const res = await signout(token).expect(HttpStatus.NO_CONTENT);
+
+    expect(sessionRepo.delete).toHaveBeenCalledWith({
+      id: 'sid-1',
+      user: { id: 1 },
+    });
+    expectCleared(res);
+  });
+
+  it.each([
+    ['garbage', async () => 'garbage'],
+    [
+      'a token with the wrong signature',
+      () => refreshToken({ sub: 1, sid: 'sid-1' }, 'not-the-secret'),
+    ],
+    ['a token without a Session id', () => refreshToken({ sub: 1 })],
+    ['no token', async () => undefined],
+  ])('only clears both cookies for %s', async (_label, token) => {
+    const res = await signout(await token()).expect(HttpStatus.NO_CONTENT);
+
+    expect(sessionRepo.delete).not.toHaveBeenCalled();
+    expectCleared(res);
   });
 });
