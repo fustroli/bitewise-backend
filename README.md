@@ -60,8 +60,8 @@ Swagger UI is served at `/api/docs` (OpenAPI JSON at `/api/docs-json`). It maps 
 
 ## Health checks
 
-- `GET /health` - liveness. Confirms the process is up; no external dependency checks.
-- `GET /health/ready` - readiness. Confirms the app can serve traffic, including a DB connectivity check (1.5s timeout).
+- `GET /api/health` - liveness. Confirms the process is up; no external dependency checks.
+- `GET /api/health/ready` - readiness. Confirms the app can serve traffic, including a DB connectivity check (1.5s timeout).
 
 Both return `200` with a `@nestjs/terminus` status payload when healthy, and `503` otherwise. Neither is rate-limited, so infra probes (load balancer, CodeDeploy, orchestrator) are never throttled.
 
