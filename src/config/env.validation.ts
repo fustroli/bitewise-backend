@@ -99,6 +99,12 @@ class EnvironmentVariables {
   @Min(0)
   TRUST_PROXY_HOPS?: number;
 
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  SHUTDOWN_DRAIN_MS?: number;
+
   @IsString()
   @IsNotEmpty()
   TYPEORM_HOST: string;

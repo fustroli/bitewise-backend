@@ -15,6 +15,9 @@ async function bootstrap() {
 
   setupApp(app);
 
+  //on SIGTERM/SIGINT: fail readiness, drain, close the server, then the DB pool
+  app.enableShutdownHooks();
+
   //secure app by setting HTTP response headers
   app.use(helmet());
 
