@@ -27,6 +27,7 @@ export const config: IConfig = {
     TTL: +process.env.THROTTLER_TTL,
   },
   TRUST_PROXY_HOPS: +(process.env.TRUST_PROXY_HOPS ?? 0),
+  SHUTDOWN_DRAIN_MS: +(process.env.SHUTDOWN_DRAIN_MS ?? 0),
   TYPEORM: {
     HOST: process.env.TYPEORM_HOST,
     PORT: +process.env.TYPEORM_PORT,
@@ -72,6 +73,9 @@ export interface IConfig {
   };
   // Reverse proxies in front of the app (prod: CloudFront + nginx = 2); 0 = none
   TRUST_PROXY_HOPS: number;
+  // On shutdown, how long readiness reports down before the HTTP server closes,
+  // so a load balancer polling it stops routing here first; 0 = close at once
+  SHUTDOWN_DRAIN_MS: number;
   TYPEORM: {
     HOST: string;
     PORT: number;

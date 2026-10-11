@@ -40,6 +40,7 @@ describe('validateEnv', () => {
         ...validEnv,
         COOKIE_DOMAIN: '',
         TRUST_PROXY_HOPS: '',
+        SHUTDOWN_DRAIN_MS: '',
         SWAGGER_ENABLED: '',
       }),
     ).toEqual([]);
@@ -59,6 +60,7 @@ describe('validateEnv', () => {
     ['ACCESS_TOKEN_EXPIRATION', '0s'],
     ['THROTTLER_TTL', '1.5'],
     ['TRUST_PROXY_HOPS', '-1'],
+    ['SHUTDOWN_DRAIN_MS', '-1'],
     ['SWAGGER_ENABLED', 'yes'],
     ['TYPEORM_PORT', '70000'],
     ['TYPEORM_PASSWORD', ''],
