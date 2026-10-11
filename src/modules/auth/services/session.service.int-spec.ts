@@ -211,14 +211,51 @@ describe('SessionService', () => {
         password: PASSWORD,
       });
 
-      const { sid } = await sessions.verifyRefreshToken(tokens.refreshToken);
-      await sessions.signOut(sid);
+      await sessions.signOut(tokens.refreshToken);
 
       await expect(authenticate(tokens)).rejects.toThrow(UnauthorizedException);
       await expect(sessions.rotate(tokens.refreshToken)).rejects.toThrow(
         UnauthorizedException,
       );
       await expect(authenticate(other.tokens)).resolves.toBeDefined();
+    });
+
+    it('ends the Session of an expired refresh token', async () => {
+      const { user, tokens } = await signUp();
+      // Expired at the epoch's first second
+      const expired = await jwt.signAsync(
+        { ...claimsOf(tokens.refreshToken), exp: 1 },
+        { secret: config.JWT.REFRESH_TOKEN_SECRET },
+      );
+
+      await sessions.signOut(expired);
+
+      expect(await sessionCount(user)).toBe(0);
+    });
+
+    it('ends nothing for a missing, access, forged or garbage token', async () => {
+      const { user, tokens } = await signUp();
+      const forged = await jwt.signAsync(claimsOf(tokens.refreshToken), {
+        secret: 'not-the-secret',
+      });
+
+      for (const token of [undefined, tokens.accessToken, forged, 'garbage'])
+        await sessions.signOut(token);
+
+      expect(await sessionCount(user)).toBe(1);
+    });
+
+    it("ends nothing when the token's User does not own its Session", async () => {
+      const victim = await signUp();
+      const { user } = await signUp();
+      const mismatched = await jwt.signAsync(
+        { sub: user.id, sid: claimsOf(victim.tokens.refreshToken).sid },
+        { secret: config.JWT.REFRESH_TOKEN_SECRET },
+      );
+
+      await sessions.signOut(mismatched);
+
+      await expect(authenticate(victim.tokens)).resolves.toBeDefined();
     });
   });
 
