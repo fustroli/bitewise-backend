@@ -16,6 +16,7 @@ export const config: IConfig = {
     LIMIT: +process.env.THROTTLER_LIMIT,
     TTL: +process.env.THROTTLER_TTL,
   },
+  TRUST_PROXY_HOPS: +(process.env.TRUST_PROXY_HOPS ?? 0),
   TYPEORM: {
     HOST: process.env.TYPEORM_HOST,
     PORT: +process.env.TYPEORM_PORT,
@@ -57,6 +58,8 @@ export interface IConfig {
     LIMIT: number;
     TTL: number;
   };
+  // Reverse proxies in front of the app (prod: CloudFront + nginx = 2); 0 = none
+  TRUST_PROXY_HOPS: number;
   TYPEORM: {
     HOST: string;
     PORT: number;
