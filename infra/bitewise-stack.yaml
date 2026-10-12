@@ -51,9 +51,11 @@ Parameters:
     Type: String
     Description: Existing private S3 bucket for avatars (S3_BUCKET in the backend .env)
     AllowedPattern: '^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$'
+  # Pinned: a floating SSM /current AMI would replace the instance (and wipe MySQL on its root EBS) on stack update
   UbuntuAmi:
-    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id
+    Type: AWS::EC2::Image::Id
+    Default: ami-0fa5967347d08d2df
+    Description: Ubuntu 24.04 amd64 (us-east-1), pinned. Change only if you accept instance replacement.
 
 Rules:
   RegionIsUsEast1:
@@ -240,6 +242,9 @@ Resources:
       IamInstanceProfile: !Ref InstanceProfile
       SubnetId: !Ref PublicSubnetA
       SecurityGroupIds: [!Ref AppSecurityGroup]
+      MetadataOptions:
+        HttpTokens: required
+        HttpEndpoint: enabled
       CreditSpecification:
         CPUCredits: standard
       BlockDeviceMappings:
@@ -289,6 +294,17 @@ Resources:
           GRANT ALL PRIVILEGES ON bitewise.* TO 'bitewise'@'localhost';
           FLUSH PRIVILEGES;
           EOF
+
+          # Nightly logical backup: mysqldump | gzip -> S3 backups/ (expires via bucket lifecycle)
+          snap install aws-cli --classic
+          cat > /usr/local/bin/bitewise-db-backup <<'EOF'
+          #!/bin/bash
+          set -euo pipefail
+          mysqldump --single-transaction --routines bitewise | gzip \
+            | /snap/bin/aws s3 cp - "s3://${ArtifactBucket}/backups/bitewise-$(date -u +%F).sql.gz" --region ${AWS::Region}
+          EOF
+          chmod +x /usr/local/bin/bitewise-db-backup
+          echo '30 3 * * * root /usr/local/bin/bitewise-db-backup >> /var/log/bitewise-db-backup.log 2>&1' > /etc/cron.d/bitewise-db-backup
 
           # Nginx: / -> Next.js, /api/* -> NestJS (prefix kept; Nest serves under /api)
           cat > /etc/nginx/sites-available/bitewise <<'EOF'
@@ -398,6 +414,10 @@ Resources:
             Status: Enabled
             Prefix: pipeline/
             ExpirationInDays: 30
+          - Id: expire-db-backups
+            Status: Enabled
+            Prefix: backups/
+            ExpirationInDays: 14
 
   CodeBuildRole:
     Type: AWS::IAM::Role
