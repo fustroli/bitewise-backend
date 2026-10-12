@@ -1,3 +1,5 @@
+# REFERENCE ONLY: this stack is not deployed. The host is set up by hand in the console;
+# see docs/infra/manual-setup.md. Keep this as the target shape to compare against.
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
   BiteWise - single EC2 instance (Next.js + NestJS + MySQL) behind CloudFront,
