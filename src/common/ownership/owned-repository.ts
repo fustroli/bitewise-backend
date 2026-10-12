@@ -89,7 +89,10 @@ export class OwnedRepository<T extends IOwnedEntity> {
     pagination: PaginationDto,
   ): Promise<IPaginated<T>> {
     const [data, count] = await this.repository.findAndCount({
-      where: this.ownedWhere(ownerId, this.search(pagination)),
+      where: this.ownedWhere(ownerId, {
+        ...this.search(pagination),
+        ...this.idsFilter(pagination),
+      }),
       relations: this.config.relations,
       relationLoadStrategy: this.config.relationLoadStrategy,
       order: this.order(pagination),
@@ -133,6 +136,10 @@ export class OwnedRepository<T extends IOwnedEntity> {
     if (!search) return {};
 
     return { name: Like(`%${search.replace(/[\\%_]/g, '\\$&')}%`) };
+  }
+
+  private idsFilter({ ids }: PaginationDto): Record<string, unknown> {
+    return ids ? { id: In(ids) } : {};
   }
 
   private order({
