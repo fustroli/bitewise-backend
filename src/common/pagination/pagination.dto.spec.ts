@@ -1,6 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { MAX_SEARCH_LENGTH, PaginationDto } from './pagination.dto.js';
+import { MAX_IDS, MAX_SEARCH_LENGTH, PaginationDto } from './pagination.dto.js';
 
 describe('PaginationDto', () => {
   const toDto = (query: Record<string, unknown>) =>
@@ -32,5 +32,40 @@ describe('PaginationDto', () => {
       expect(errors).toHaveLength(1);
       expect(errors[0].property).toBe('search');
     });
+  });
+
+  describe('ids', () => {
+    it('is optional', async () => {
+      expect(toDto({}).ids).toBeUndefined();
+    });
+
+    it('parses a comma-separated list', async () => {
+      const dto = toDto({ ids: '1,2,3' });
+
+      expect(dto.ids).toEqual([1, 2, 3]);
+      expect(await validate(dto)).toHaveLength(0);
+    });
+
+    it('parses repeated params', async () => {
+      const dto = toDto({ ids: ['1', '2'] });
+
+      expect(dto.ids).toEqual([1, 2]);
+      expect(await validate(dto)).toHaveLength(0);
+    });
+
+    it(`rejects more than ${MAX_IDS} ids`, async () => {
+      const errors = await validate(toDto({ ids: '1,2,3,4' }));
+
+      expect(errors[0].property).toBe('ids');
+    });
+
+    it.each(['a', '1,b', '', '1,,2', '1.5', '0', '-1'])(
+      'rejects invalid ids %p',
+      async (ids) => {
+        const errors = await validate(toDto({ ids }));
+
+        expect(errors[0].property).toBe('ids');
+      },
+    );
   });
 });

@@ -1,5 +1,8 @@
 import {
+  ArrayMaxSize,
+  ArrayMinSize,
   IsInt,
+  IsPositive,
   Max,
   Min,
   IsOptional,
@@ -14,6 +17,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export const DEFAULT_PAGE_LIMIT = 20;
 export const MAX_PAGE_LIMIT = 100;
 export const MAX_SEARCH_LENGTH = 100;
+export const MAX_IDS = 3;
 
 export class PaginationDto {
   @IsOptional()
@@ -63,4 +67,24 @@ export class PaginationDto {
     description: `Case- and accent-insensitive substring match on name, max ${MAX_SEARCH_LENGTH} chars`,
   })
   search?: string;
+
+  @IsOptional()
+  @Transform(({ value }) =>
+    (Array.isArray(value) ? value : [value])
+      .flatMap((v: unknown) => (typeof v === 'string' ? v.split(',') : [v]))
+      .map((v: unknown) =>
+        typeof v === 'string' ? Number(v.trim() || NaN) : v,
+      ),
+  )
+  @ArrayMinSize(1)
+  @ArrayMaxSize(MAX_IDS)
+  @IsInt({ each: true })
+  @IsPositive({ each: true })
+  @ApiProperty({
+    type: String,
+    example: '1,2,3',
+    required: false,
+    description: `Comma-separated ids, max ${MAX_IDS}; unknown or foreign ids are omitted`,
+  })
+  ids?: number[];
 }

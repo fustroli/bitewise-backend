@@ -258,6 +258,46 @@ describe('OwnedRepository', () => {
     });
   });
 
+  describe('listOwned with ids', () => {
+    it('returns only the requested owned resources', async () => {
+      const apple = await ingredients.createOwned(
+        ingredient('Apple'),
+        owner.id,
+      );
+      await ingredients.createOwned(ingredient('Pear'), owner.id);
+      const plum = await ingredients.createOwned(ingredient('Plum'), owner.id);
+
+      const requested = [apple.id, plum.id];
+      const page = await ingredients.listOwned(owner.id, {
+        ids: requested,
+        orderBy: 'name',
+      });
+
+      expect(page.count).toBe(requested.length);
+      expect(page.data.map((i) => i.id)).toEqual(requested);
+    });
+
+    it('silently omits missing, soft-deleted and foreign ids', async () => {
+      const mine = await ingredients.createOwned(ingredient('Apple'), owner.id);
+      const deleted = await ingredients.createOwned(
+        ingredient('Pear'),
+        owner.id,
+      );
+      await ingredients.softDeleteOwned(deleted.id, owner.id);
+      const foreign = await ingredients.createOwned(
+        ingredient('Plum'),
+        stranger.id,
+      );
+
+      const page = await ingredients.listOwned(owner.id, {
+        ids: [mine.id, deleted.id, foreign.id, MISSING_ID],
+      });
+
+      expect(page.count).toBe(1);
+      expect(page.data.map((i) => i.id)).toEqual([mine.id]);
+    });
+  });
+
   describe('softDeleteOwned', () => {
     it("404s for someone else's resource and leaves it intact", async () => {
       const { id } = await ingredients.createOwned(
