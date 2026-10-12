@@ -9,7 +9,7 @@ Avatar bucket + CloudFront: see `avatar-storage.md`.
 
 | Item | Value |
 | --- | --- |
-| Domain | |
+| Domain | bitewise.rolandfuest.com (DNS: Namecheap) |
 | Instance type | t3.micro |
 | AMI | |
 | VPC / subnet | |
@@ -18,55 +18,67 @@ Avatar bucket + CloudFront: see `avatar-storage.md`.
 
 ## 1. Network
 
-- [ ] VPC (or default VPC), public subnet, internet gateway, route table
+- [x] VPC (or default VPC), public subnet, internet gateway, route table
 
 ## 2. Security group
 
-- [ ] SSH (22) from `<my-ip>/32`
-- [ ] HTTP (80) from the CloudFront origin-facing prefix list
+- [x] No SSH: shell via SSM Session Manager (port 22 closed, no key pair)
+- [x] HTTP (80) from the CloudFront origin-facing prefix list
 
 ## 3. IAM instance role
 
-- [ ] `AmazonSSMManagedInstanceCore`
-- [ ] Artifact bucket: Get/Put/List
-- [ ] Avatar bucket: `s3:PutObject`, `s3:DeleteObject` only
+- [x] `AmazonSSMManagedInstanceCore` (role `bitewise-ec2-role`)
+- [x] Backup bucket: `s3:PutObject`/`s3:GetObject` on `backups/*`, `s3:ListBucket` on the bucket
+- [x] Avatar bucket: `s3:PutObject`, `s3:DeleteObject` only
 
 ## 4. EC2 instance
 
-- [ ] Launch (Ubuntu 24.04, gp3 encrypted volume, IMDSv2 required, role attached, key pair)
-- [ ] Elastic IP associated
-- [ ] 2 GB swap
+- [x] Launch (Ubuntu 24.04, gp3 encrypted volume, IMDSv2 required, role attached; key pair later removed)
+- [x] Elastic IP associated
+- [x] 2 GB swap
 
 ## 5. Server software
 
-- [ ] nginx: `/` to Next.js `:3000`, `/api/` to Nest `:8000`
-- [ ] MySQL 8, low-memory config, `bitewise` DB + user
-- [ ] Node 22, pm2 (+ `pm2 startup`)
-- [ ] Bun (per-user, needs `unzip`)
+- [x] nginx: `/` to Next.js `:3000`, `/api/` to Nest `:8000`
+- [x] MySQL 8, low-memory config, `bitewise` DB + user
+- [x] Node 22, pm2 (+ `pm2 startup`)
+- [x] Bun (per-user, needs `unzip`)
 
 ## 6. Backend `.env`
 
-- [ ] `TRUST_PROXY_HOPS=2` (CloudFront + nginx)
-- [ ] Other values: see `.env.example`
+- [x] `TRUST_PROXY_HOPS=2` (CloudFront + nginx)
+- [x] Other values: see `.env.example`
 
 ## 7. Certificate + CloudFront
 
-- [ ] ACM cert (us-east-1, DNS validation); validation CNAME added at DNS provider
-- [ ] Distribution: origin = EC2 public DNS, HTTP only; alias = domain
-- [ ] Default behavior: caching disabled, all methods, AllViewer origin request policy
-- [ ] `/_next/static/*` behavior: CachingOptimized
-- [ ] DNS CNAME: domain to the distribution domain
+- [x] ACM cert (us-east-1, DNS validation); validation CNAME added at DNS provider
+- [x] Distribution: origin = EC2 public DNS, HTTP only; alias = domain
+- [x] Default behavior: caching disabled, all methods, AllViewer origin request policy
+- [x] `/_next/static/*` behavior: CachingOptimized
+- [x] DNS CNAME: domain to the distribution domain
 
 ## 8. Deploy
 
-- [ ] How code gets onto the box (manual `git pull` + build, or CodeDeploy/CodePipeline)
-- [ ] `bun run migration:run` before first start
+- [x] How code gets onto the box: manual `git clone`/`git pull` + build on the box, pm2 (pipeline optional later)
+- [x] `bun run migration:run` before first start
 
 ## 9. Backups
 
-- [ ] EBS daily snapshots (DLM), keep 7
-- [ ] Nightly `mysqldump | gzip` to S3 `backups/`, 14-day expiry
-- Restore: `aws s3 cp s3://<bucket>/backups/<file> - | gunzip | mysql bitewise`
+> **Resume here:** restore test, then DLM snapshots.
+
+- [x] Separate backup bucket (not the avatar bucket: its policy lets CloudFront read `/*`),
+      Block Public Access on, lifecycle: expire `backups/` after 14 days
+- [x] Nightly `mysqldump | gzip` to S3 `backups/` (`/usr/local/bin/bitewise-db-backup`,
+      `/etc/cron.d/bitewise-db-backup`, 03:30 UTC, runs as root via `auth_socket`)
+- [ ] Restore test into a scratch DB (a backup never restored isn't a backup):
+  ```bash
+  sudo mysql -e 'CREATE DATABASE restore_test'
+  aws s3 cp s3://<backup-bucket>/backups/bitewise-<date>.sql.gz - | gunzip | sudo mysql restore_test
+  sudo mysql -e 'SHOW TABLES FROM restore_test; DROP DATABASE restore_test'
+  ```
+- [ ] EBS daily snapshots (DLM): tag instance `Backup=bitewise`, EC2 > Lifecycle Manager > EBS
+      snapshot policy targeting that tag, daily, keep 7
+- Restore for real: `aws s3 cp s3://<backup-bucket>/backups/<file> - | gunzip | sudo mysql bitewise`
 
 ## 10. Cost guard
 
@@ -94,4 +106,8 @@ Expect:
 
 ## Differs from `infra/bitewise-stack.yaml`
 
--
+- No SSH ingress rule or key pair; admin access via SSM Session Manager only.
+- DNS stays at Namecheap (subdomain CNAME), no Route 53.
+- CloudFront on the flat-rate Free plan (WAF included, no price class); alias, cert, HTTP/3 and
+  behaviors set after creation. Watch WAF body-size rules on avatar uploads.
+- DB dumps go to a dedicated backup bucket, not the artifact bucket; no CodeBuild/CodeDeploy yet.

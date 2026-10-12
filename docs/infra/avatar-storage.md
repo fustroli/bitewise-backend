@@ -61,7 +61,7 @@ No access keys in config: the SDK default provider chain picks up the role in pr
 
 | Variable          | Example                        |
 | ----------------- | ------------------------------ |
-| `S3_REGION`       | `eu-central-1`                 |
+| `S3_REGION`       | `us-east-1`                    |
 | `S3_BUCKET`       | `<bucket>`                     |
 | `S3_CDN_BASE_URL` | `https://dxxxx.cloudfront.net` |
 
