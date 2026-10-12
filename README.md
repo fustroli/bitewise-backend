@@ -4,17 +4,22 @@ NestJS API for BiteWise, backed by MySQL via TypeORM.
 
 ## Features
 
-- Authentication (email/password + Google OAuth) with JWT access/refresh tokens
-- Users, ingredients, meals, meal plans
+- Authentication (email/password + Google OAuth) with per-device sessions and JWT access/refresh tokens
+- Users (profile, avatar, dashboard statistics), ingredients, meals, meal plans
+- Paginated, sortable list endpoints, filterable by ids
 - File storage via Google Cloud Storage
-- Request throttling, validation, and security headers (helmet)
+- Request throttling, validation, security headers (helmet), response compression (gzip/brotli)
+- Structured logging with request ids, graceful shutdown with readiness drain
+- Periodic cleanup of expired sessions
 - Swagger API docs (disabled in production by default, see below)
 - Liveness/readiness health checks
 
 ## Requirements
 
-- Node.js 20
+- Node.js 20+ (22 in Docker/CI)
+- [Bun](https://bun.sh) (package manager)
 - MySQL
+- Docker (integration tests only, via Testcontainers)
 
 ## Setup
 
@@ -50,6 +55,14 @@ bun run start:prod
 bun run test        # unit tests
 bun run test:e2e    # e2e tests
 bun run test:cov    # coverage
+bun run test:int    # integration tests (needs Docker)
+```
+
+## Linting / formatting
+
+```bash
+bun run lint
+bun run format
 ```
 
 ## API docs
@@ -57,6 +70,11 @@ bun run test:cov    # coverage
 Swagger UI is served at `/api/docs` (OpenAPI JSON at `/api/docs-json`). It maps every route, so it is
 **off in production by default** (`NODE_ENV=production`) and on everywhere else. Override with
 `SWAGGER_ENABLED=true|false`, e.g. to debug a prod-like environment temporarily.
+
+## Further docs
+
+- `CONTEXT.md` - domain glossary
+- `docs/adr/` - architecture decision records
 
 ## Health checks
 
