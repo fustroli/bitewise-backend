@@ -19,7 +19,7 @@ NestJS API for BiteWise, backed by MySQL via TypeORM.
 ## Setup
 
 ```bash
-npm install
+bun install
 cp .env.example .env   # then fill in the values
 ```
 
@@ -29,27 +29,27 @@ The schema is managed by migrations (see `docs/adr/0002-schema-managed-by-migrat
 Apply them before the first start and after pulling new ones:
 
 ```bash
-npm run migration:run
+bun run migration:run
 ```
 
 ```bash
 # development
-npm run start
+bun run start
 
 # watch mode
-npm run start:dev
+bun run start:dev
 
 # production
-npm run build
-npm run start:prod
+bun run build
+bun run start:prod
 ```
 
 ## Testing
 
 ```bash
-npm run test        # unit tests
-npm run test:e2e    # e2e tests
-npm run test:cov    # coverage
+bun run test        # unit tests
+bun run test:e2e    # e2e tests
+bun run test:cov    # coverage
 ```
 
 ## API docs

@@ -12,7 +12,7 @@ NestJS REST API backend for BiteWise, a meal/ingredient tracking platform.
 - **API Docs**: Swagger (`@nestjs/swagger`) at `/api/docs`; all routes use global prefix `/api`
 - **Health checks**: `@nestjs/terminus` (`GET /api/health` liveness, `GET /api/health/ready` readiness w/ DB check)
 - **Testing**: Jest (ESM mode: `ts-jest` with `useESM`, run via `--experimental-vm-modules`)
-- **Package manager**: npm
+- **Package manager**: Bun (Node stays the runtime)
 - **Linting/Formatting**: ESLint (flat config, `eslint.config.js`) + Prettier
 
 ---
@@ -121,32 +121,32 @@ barrel per directory. Import from the barrel (`../entities/index.js`), not indiv
 
 ```bash
 # Development
-npm run start:dev              # Watch mode
+bun run start:dev              # Watch mode
 
 # Build / prod
-npm run build
-npm run start:prod
+bun run build
+bun run start:prod
 
 # Migrations (all but create build first; the CLI runs against dist/)
-npm run migration:generate -- src/database/migrations/<Name>   # diff entities vs DB
-npm run migration:create -- src/database/migrations/<Name>     # empty (data changes)
-npm run migration:run
-npm run migration:revert       # local only
-npm run migration:show
+bun run migration:generate -- src/database/migrations/<Name>   # diff entities vs DB
+bun run migration:create -- src/database/migrations/<Name>     # empty (data changes)
+bun run migration:run
+bun run migration:revert       # local only
+bun run migration:show
 
 # Testing
-npm run test                   # Unit tests (ESM, via --experimental-vm-modules)
-npm run test:cov               # Coverage report
-npm run test:e2e               # E2E tests
-npm run test:int               # Integration tests (*.int-spec.ts) — needs Docker (Testcontainers MySQL)
+bun run test                   # Unit tests (ESM, via --experimental-vm-modules)
+bun run test:cov               # Coverage report
+bun run test:e2e               # E2E tests
+bun run test:int               # Integration tests (*.int-spec.ts) — needs Docker (Testcontainers MySQL)
 
 # Lint / format
-npm run lint
-npm run format
+bun run lint
+bun run format
 
 # Docker (local MySQL, etc.)
-npm run docker:dev
-npm run docker:dev:down
+bun run docker:dev
+bun run docker:dev:down
 ```
 
 ---
@@ -158,7 +158,7 @@ run the migrations too, and the Docker image runs `migration:run` before startin
 
 - Entity change → `migration:generate` against a dev DB that is fully migrated, then:
   - Add the class to the `migrations` array in `src/database/migrations/index.ts` (not globbed).
-  - Review the SQL by hand and run `npx prettier --write` on the file.
+  - Review the SQL by hand and run `bunx prettier --write` on the file.
   - If it writes `typeorm_metadata` rows (generated columns, ADR-0001), replace the hardcoded
     database name with `await queryRunner.getCurrentDatabase()` (see `InitialSchema`).
 - `schema-drift.int-spec.ts` fails if the entities and the migrations disagree, or if `down()` doesn't
