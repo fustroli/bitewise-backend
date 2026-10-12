@@ -20,6 +20,8 @@ import {
   UserResponseDto,
 } from '../dto/index.js';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { AVATAR_MAX_BYTES } from '../avatar/index.js';
+import { toUserResponse } from '../serializers/index.js';
 
 @ApiTags('users')
 @Controller('users')
@@ -32,7 +34,7 @@ export class UserController {
   @Get('me')
   @ApiOkResponse({ type: UserResponseDto })
   getMe(@CurrentUser() { userId }: IAuthenticatedUser) {
-    return this.profiles.getProfile(userId);
+    return this.profiles.getProfile(userId).then(toUserResponse);
   }
 
   @Get('me/statistics')
@@ -47,7 +49,7 @@ export class UserController {
     @CurrentUser() { userId }: IAuthenticatedUser,
     @Body() patch: ProfilePatchDto,
   ) {
-    return this.profiles.updateProfile(userId, patch);
+    return this.profiles.updateProfile(userId, patch).then(toUserResponse);
   }
 
   @Delete('me')
@@ -57,12 +59,14 @@ export class UserController {
   }
 
   @Post('me/avatar')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: AVATAR_MAX_BYTES } }),
+  )
   @ApiOkResponse({ type: UserResponseDto })
   uploadAvatar(
     @UploadedFile() file: Express.Multer.File,
     @CurrentUser() { userId }: IAuthenticatedUser,
   ) {
-    return this.profiles.uploadAvatar(file, userId);
+    return this.profiles.uploadAvatar(file, userId).then(toUserResponse);
   }
 }

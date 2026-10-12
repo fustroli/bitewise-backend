@@ -35,7 +35,7 @@ export function stubUser(override: Partial<User> = {}): User {
       marketingEmail: false,
       securityEmail: true,
     },
-    avatarUrl: null,
+    avatarKey: null,
     googleId: null,
     createTimeStamp: new Date(),
     updateTimeStamp: new Date(),

@@ -21,9 +21,9 @@ const validEnv = {
   GOOGLE_CLIENT_ID: 'client-id',
   GOOGLE_SECRET: 'google-secret',
   GOOGLE_CALLBACK_URL: 'http://localhost:8000/api/auth/google/callback',
-  GCP_PROJECT_ID: 'project',
-  GCP_PRIVATE_KEY_FILE: 'key.json',
-  GCP_BUCKET_NAME: 'bucket',
+  S3_REGION: 'eu-central-1',
+  S3_BUCKET: 'bucket',
+  S3_CDN_BASE_URL: 'https://cdn.example.com',
 };
 
 const invalidKeys = (env: NodeJS.ProcessEnv) =>

@@ -7,7 +7,7 @@ NestJS API for BiteWise, backed by MySQL via TypeORM.
 - Authentication (email/password + Google OAuth) with per-device sessions and JWT access/refresh tokens
 - Users (profile, avatar, dashboard statistics), ingredients, meals, meal plans
 - Paginated, sortable list endpoints, filterable by ids
-- File storage via Google Cloud Storage
+- Avatar storage in S3 behind CloudFront (see `docs/infra/avatar-storage.md`)
 - Request throttling, validation, security headers (helmet), response compression (gzip/brotli)
 - Structured logging with request ids, graceful shutdown with readiness drain
 - Periodic cleanup of expired sessions

@@ -8,7 +8,7 @@ NestJS REST API backend for BiteWise, a meal/ingredient tracking platform.
 - **ORM**: TypeORM 1.1 with MySQL (`mysql2`)
 - **Auth**: per-device Sessions (`SessionService`); JWT access + refresh tokens carrying `sid`, issued as
   httpOnly cookies but accepted only as `Bearer`; Passport (email/password, Google OAuth)
-- **Storage**: Google Cloud Storage (`@google-cloud/storage`) — used for avatar uploads
+- **Storage**: S3 behind CloudFront (`@aws-sdk/client-s3`, `sharp` for re-encoding) — avatar uploads, via the `FileStore` port (ADR-0003)
 - **API Docs**: Swagger (`@nestjs/swagger`) at `/api/docs`; all routes use global prefix `/api`
 - **Health checks**: `@nestjs/terminus` (`GET /api/health` liveness, `GET /api/health/ready` readiness w/ DB check)
 - **Testing**: Jest (ESM mode: `ts-jest` with `useESM`, run via `--experimental-vm-modules`)
@@ -56,7 +56,7 @@ src/
     ingredient/                # Ingredient CRUD, owned by a user
     meal/                      # Meal CRUD, composed of ingredients (MealIngredient join entity)
     meal-plan/                 # Meal plan CRUD, composed of meals (MealPlanMeal join entity)
-    storage/                   # StorageService — GCS uploads (avatars)
+    storage/                   # FileStore port + S3 and in-memory adapters (policy lives in user/avatar)
     health/                    # Terminus health checks
   swagger/                     # Swagger setup (initializeSwagger)
   types/                       # Ambient type augmentations (Express.Request.user, multer types)

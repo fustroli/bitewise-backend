@@ -62,8 +62,10 @@ export class User {
   @Column({ nullable: true })
   hash: string;
 
+  // Object key in the FileStore; the response's avatarUrl is built from it
+  @Exclude()
   @Column({ type: 'varchar', length: 255, nullable: true })
-  avatarUrl: string | null;
+  avatarKey: string | null;
 
   @Exclude()
   @Column({ nullable: true })

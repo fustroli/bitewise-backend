@@ -1,4 +1,5 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import sharp from 'sharp';
 import { DataSource } from 'typeorm';
 import { createHash, randomUUID } from 'crypto';
 import {
@@ -8,7 +9,7 @@ import {
 } from '../../../../test/int/test-database.js';
 import { toConflict } from '../../../common/filters/index.js';
 import { Session } from '../../auth/entities/index.js';
-import { StorageService } from '../../storage/storage.service.js';
+import { InMemoryFileStore } from '../../storage/index.js';
 import { User } from '../entities/index.js';
 import { EActivityLevel, ESex } from '../enum/index.js';
 import { ProfileService } from './profile.service.js';
@@ -42,6 +43,7 @@ describe('ProfileService', () => {
   let dataSource: DataSource;
   let profiles: ProfileService;
   let user: User;
+  let files: InMemoryFileStore;
 
   const conflictOf = (promise: Promise<unknown>) =>
     promise.then(
@@ -56,17 +58,31 @@ describe('ProfileService', () => {
 
   beforeAll(async () => {
     dataSource = await connectTestDatabase(await createTestDatabase());
-    profiles = new ProfileService(
-      dataSource.getRepository(User),
-      {} as StorageService,
-    );
   });
 
   afterAll(() => dataSource.destroy());
 
   beforeEach(async () => {
     user = await createUser(dataSource);
+    files = new InMemoryFileStore();
+    profiles = new ProfileService(dataSource.getRepository(User), files);
   });
+
+  const upload = (owner: User, buffer: Buffer, mimetype = 'image/png') =>
+    profiles.uploadAvatar(
+      { buffer, mimetype } as Express.Multer.File,
+      owner.id,
+    );
+
+  const SOURCE_WIDTH = 800;
+  const SOURCE_HEIGHT = 600;
+  const png = (width = SOURCE_WIDTH, height = SOURCE_HEIGHT) =>
+    sharp({
+      create: { width, height, channels: 3, background: '#336699' },
+    })
+      .withExif({ IFD0: { Copyright: 'secret' } })
+      .png()
+      .toBuffer();
 
   describe('getProfile', () => {
     it('returns every Profile group, defaulted for a new User', async () => {
@@ -263,7 +279,7 @@ describe('ProfileService', () => {
   });
 
   describe('deleteAccount', () => {
-    it('clears the Profile and avatarUrl and soft-deletes the User', async () => {
+    it('clears the Profile and avatarKey and soft-deletes the User', async () => {
       const userName = uniqueUserName();
       await profiles.updateProfile(user.id, {
         personalInformation: { userName, firstName: 'John' },
@@ -281,13 +297,13 @@ describe('ProfileService', () => {
       });
       await dataSource
         .getRepository(User)
-        .update(user.id, { avatarUrl: 'https://cdn/avatar.png' });
+        .update(user.id, { avatarKey: '1/a.webp' });
 
       await profiles.deleteAccount(user.id);
 
       const deleted = await reload(user.id);
       expect(deleted.deleteTimeStamp).not.toBeNull();
-      expect(deleted.avatarUrl).toBeNull();
+      expect(deleted.avatarKey).toBeNull();
       expect(deleted.personalInformation).toEqual(EMPTY_PERSONAL_INFORMATION);
       expect(deleted.socialProfiles).toEqual(EMPTY_SOCIAL_PROFILES);
       expect(deleted.bodyStats).toEqual(EMPTY_BODY_STATS);
@@ -334,6 +350,77 @@ describe('ProfileService', () => {
           personalInformation: { userName },
         }),
       ).resolves.toBeDefined();
+    });
+  });
+
+  describe('uploadAvatar', () => {
+    it('stores a 512px WebP without EXIF under <userId>/<uuid>.webp', async () => {
+      const saved = await upload(user, await png());
+
+      expect(saved.avatarKey).toMatch(
+        new RegExp(`^${user.id}/[0-9a-f-]{36}\\.webp$`),
+      );
+      const stored = files.files.get(saved.avatarKey);
+      expect(stored).toMatchObject({
+        contentType: 'image/webp',
+        cacheControl: 'public, max-age=31536000, immutable',
+      });
+      const meta = await sharp(stored.body).metadata();
+      expect(meta).toMatchObject({ format: 'webp', width: 512, height: 512 });
+      expect(meta.exif).toBeUndefined();
+      expect((await reload(user.id)).avatarKey).toBe(saved.avatarKey);
+    });
+
+    it('400s without a file, for a disallowed type and for undecodable data', async () => {
+      await expect(profiles.uploadAvatar(undefined, user.id)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(upload(user, await png(), 'image/gif')).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(
+        upload(user, Buffer.from('not an image'), 'image/png'),
+      ).rejects.toThrow(BadRequestException);
+      expect(files.files.size).toBe(0);
+    });
+
+    it('500s with a generic message when the store fails, keeping the old avatar', async () => {
+      const first = await upload(user, await png());
+      files.failPut = true;
+
+      await expect(upload(user, await png())).rejects.toThrow(
+        'Failed to store the avatar',
+      );
+      expect((await reload(user.id)).avatarKey).toBe(first.avatarKey);
+    });
+
+    it('deletes the old object on replace', async () => {
+      const first = await upload(user, await png());
+      const second = await upload(user, await png());
+
+      expect([...files.files.keys()]).toEqual([second.avatarKey]);
+      expect(second.avatarKey).not.toBe(first.avatarKey);
+    });
+
+    it('succeeds when deleting the old object fails', async () => {
+      await upload(user, await png());
+      files.failDelete = true;
+
+      const second = await upload(user, await png());
+
+      expect((await reload(user.id)).avatarKey).toBe(second.avatarKey);
+    });
+
+    it('deletes the object on account deletion, even if the delete fails', async () => {
+      const { avatarKey } = await upload(user, await png());
+      await profiles.deleteAccount(user.id);
+      expect(files.files.has(avatarKey)).toBe(false);
+
+      const other = await createUser(dataSource);
+      await upload(other, await png());
+      files.failDelete = true;
+      await expect(profiles.deleteAccount(other.id)).resolves.toBeUndefined();
+      expect((await reload(other.id)).deleteTimeStamp).not.toBeNull();
     });
   });
 });
