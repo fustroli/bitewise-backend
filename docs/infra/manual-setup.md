@@ -71,6 +71,22 @@ Avatar bucket + CloudFront: see `avatar-storage.md`.
 ## 10. Cost guard
 
 - [ ] Budget alert (email)
+- [ ] CloudWatch log groups (e.g. `/codebuild/bitewise`): set retention to 14 days after the first build creates it (default is never expire)
+
+## 11. Daytime-only schedule (optional, saves ~$4-5/mo)
+
+Stopping the instance stops the compute charge only. EBS, snapshots and the Elastic IP still bill.
+
+- [ ] Elastic IP kept (an auto-assigned IP changes on start and breaks the CloudFront origin)
+- [ ] `pm2 save` done (with `pm2 startup`) so apps return after a start; nginx and MySQL return via systemd
+- [ ] Backup cron moved into up-hours (03:30 UTC would be skipped while stopped)
+- [ ] Start/stop: manual (`aws ec2 start-instances` / `stop-instances`) or EventBridge Scheduler, two schedules with a role allowing `ec2:StartInstances` / `ec2:StopInstances`
+- Start time: `<hh:mm>`; stop time: `<hh:mm>`; timezone: `<tz>`
+
+Expect:
+- Site returns 502/504 via CloudFront while stopped.
+- ~1-2 min after start before the site responds.
+- Pipeline deploys fail while stopped (CodeDeploy agent is down); deploy during up-hours or re-run after a start.
 
 ## Gotchas hit
 
