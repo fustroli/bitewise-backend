@@ -20,8 +20,8 @@
 
 ## Checklist
 
-- [ ] `npm run lint` and `npm run build` pass
-- [ ] Tests added/updated; `npm run test` failures (if any) also fail on `main`
+- [ ] `bun run lint` and `bun run build` pass
+- [ ] Tests added/updated; `bun run test` failures (if any) also fail on `main`
 - [ ] Relative imports use explicit `.js` extensions (ESM)
 - [ ] New entity relations wrapped in `Relation<T>`
 - [ ] Ownership checks on mutating/deleting endpoints

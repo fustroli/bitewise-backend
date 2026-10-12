@@ -1,10 +1,11 @@
 # ---- build ----
 FROM node:22-alpine AS build
+COPY --from=oven/bun:1.4.3-alpine /usr/local/bin/bun /usr/local/bin/bun
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci --ignore-scripts
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile --ignore-scripts
 COPY . .
-RUN npm run build && npm prune --omit=dev --ignore-scripts
+RUN bun run build && bun install --frozen-lockfile --production --ignore-scripts
 
 # ---- runtime ----
 FROM node:22-alpine

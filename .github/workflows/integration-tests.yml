@@ -11,7 +11,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - run: bun install --frozen-lockfile
       # Testcontainers starts MySQL via the runner's Docker daemon
-      - run: npm run test:int
+      - run: bun run test:int

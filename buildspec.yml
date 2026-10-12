@@ -5,10 +5,11 @@ phases:
     runtime-versions:
       nodejs: 22
     commands:
-      - npm ci
+      - npm install -g bun@1.4.3
+      - bun install --frozen-lockfile
   build:
     commands:
-      - npm run build
+      - bun run build
 
 artifacts:
   files:
@@ -16,7 +17,7 @@ artifacts:
     - scripts/**/*
     - dist/**/*
     - package.json
-    - package-lock.json
+    - bun.lock
     - tsconfig.json
     - tsconfig.build.json
     - nest-cli.json

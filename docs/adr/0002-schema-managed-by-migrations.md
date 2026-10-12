@@ -15,7 +15,7 @@ With production hosting coming, the schema can no longer be managed by TypeORM `
 
 ## Consequences
 
-- Every entity change needs a migration (`npm run migration:generate`). The schema-drift integration test fails without one.
+- Every entity change needs a migration (`bun run migration:generate`). The schema-drift integration test fails without one.
 - Generated SQL that writes `typeorm_metadata` rows (generated columns, ADR-0001) hardcodes the generating database's name. Replace it with `await queryRunner.getCurrentDatabase()`.
 - MySQL DDL auto-commits, so a failed migration can leave part of its changes applied. Keep migrations small, and make breaking changes in expand/contract steps.
 
