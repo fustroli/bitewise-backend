@@ -1,15 +1,22 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
+  Logger,
   NotFoundException,
-  ServiceUnavailableException,
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../entities/index.js';
 import { Session } from '../../auth/entities/index.js';
 import { ProfilePatchDto } from '../dto/index.js';
-import { StorageService } from '../../storage/storage.service.js';
+import { FileStore } from '../../storage/index.js';
+import {
+  AVATAR_CACHE_CONTROL,
+  AVATAR_CONTENT_TYPE,
+  avatarKey,
+  encodeAvatar,
+} from '../avatar/index.js';
 
 const GROUPS = [
   'personalInformation',
@@ -21,10 +28,12 @@ const GROUPS = [
 /** The authenticated User's Profile. Never reads or writes credentials. */
 @Injectable()
 export class ProfileService {
+  private readonly logger = new Logger(ProfileService.name);
+
   constructor(
     @InjectRepository(User)
     private readonly users: Repository<User>,
-    private readonly storageService: StorageService,
+    private readonly files: FileStore,
   ) {}
 
   async getProfile(userId: number): Promise<User> {
@@ -84,28 +93,57 @@ export class ProfileService {
           marketingEmail: false,
           securityEmail: true,
         },
-        avatarUrl: null,
+        avatarKey: null,
       });
       await manager.softDelete(User, user.id);
       await manager.delete(Session, { user: { id: user.id } });
     });
+
+    await this.deleteAvatarFile(user.avatarKey);
   }
 
+  /** Upload new, save the User, then best-effort delete the old object. */
   public async uploadAvatar(
     file: Express.Multer.File,
     userId: number,
   ): Promise<User> {
     if (!file) throw new BadRequestException('Uploading a file is required');
 
-    const cloudStoragePath = await this.storageService.uploadFile(file);
-
-    if (!cloudStoragePath)
-      throw new ServiceUnavailableException(
-        'Failed to upload file to Google Cloud Storage',
-      );
-
+    const body = await encodeAvatar(file);
     const user = await this.getProfile(userId);
-    user.avatarUrl = cloudStoragePath;
-    return this.users.save(user);
+    const previousKey = user.avatarKey;
+    const key = avatarKey(userId);
+
+    try {
+      await this.files.put(key, body, {
+        contentType: AVATAR_CONTENT_TYPE,
+        cacheControl: AVATAR_CACHE_CONTROL,
+      });
+    } catch (error) {
+      this.logger.error(`Avatar upload failed: ${String(error)}`);
+      throw new InternalServerErrorException('Failed to store the avatar');
+    }
+
+    user.avatarKey = key;
+    let saved: User;
+    try {
+      saved = await this.users.save(user);
+    } catch (error) {
+      await this.deleteAvatarFile(key);
+      throw error;
+    }
+
+    await this.deleteAvatarFile(previousKey);
+    return saved;
+  }
+
+  /** A failed delete leaves an orphan; it is logged, never surfaced. */
+  private async deleteAvatarFile(key: string | null): Promise<void> {
+    if (!key) return;
+    try {
+      await this.files.delete(key);
+    } catch (error) {
+      this.logger.warn(`Failed to delete avatar ${key}: ${String(error)}`);
+    }
   }
 }

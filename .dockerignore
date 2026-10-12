@@ -6,7 +6,6 @@ dist
 .env.*
 !.env.example
 *.pem
-bitewise-storage-key.json
 coverage
 test
 *.tsbuildinfo

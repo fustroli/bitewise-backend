@@ -144,15 +144,14 @@ class EnvironmentVariables {
 
   @IsString()
   @IsNotEmpty()
-  GCP_PROJECT_ID: string;
+  S3_REGION: string;
 
   @IsString()
   @IsNotEmpty()
-  GCP_PRIVATE_KEY_FILE: string;
+  S3_BUCKET: string;
 
-  @IsString()
-  @IsNotEmpty()
-  GCP_BUCKET_NAME: string;
+  @IsUrl(url)
+  S3_CDN_BASE_URL: string;
 }
 
 /** One message per invalid key; empty when the env is valid. */

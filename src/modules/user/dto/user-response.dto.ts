@@ -23,6 +23,12 @@ export class UserResponseDto {
   @ApiProperty({ type: () => NotificationSettingsDto })
   notificationSettings: NotificationSettingsDto;
 
+  @ApiProperty({
+    example: 'https://cdn.example.com/1/6f1c2d3e.webp',
+    nullable: true,
+  })
+  avatarUrl: string | null;
+
   @ApiProperty({ example: '2023-10-01T00:00:00.000Z' })
   createTimeStamp: Date;
 

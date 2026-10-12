@@ -6,6 +6,7 @@ import request from 'supertest';
 import { mockThrottler } from './throttler.mock.js';
 
 mockThrottler();
+process.env.S3_CDN_BASE_URL = 'https://cdn.example.com';
 
 const { setupApp } = await import('../src/app.setup.js');
 const { UserController } =
@@ -14,6 +15,9 @@ const { stubUser, User } =
   await import('../src/modules/user/entities/index.js');
 const { ProfileService, StatisticsService } =
   await import('../src/modules/user/service/index.js');
+
+const { AVATAR_MAX_BYTES } =
+  await import('../src/modules/user/avatar/index.js');
 
 const credentials = ['hash', 'googleId'];
 
@@ -39,7 +43,7 @@ describe('User responses (e2e)', () => {
             getProfile: async () => user(),
             updateProfile: async () => user(),
             uploadAvatar: async () =>
-              Object.assign(user(), { avatarUrl: 'https://cdn/avatar.png' }),
+              Object.assign(user(), { avatarKey: '1/avatar.webp' }),
           },
         },
         { provide: StatisticsService, useValue: {} },
@@ -83,8 +87,22 @@ describe('User responses (e2e)', () => {
       .attach('file', Buffer.from('fake-image'), 'avatar.png')
       .expect(HttpStatus.CREATED);
 
-    expect(res.body.avatarUrl).toBe('https://cdn/avatar.png');
+    expect(res.body.avatarUrl).toBe('https://cdn.example.com/1/avatar.webp');
+    expect(res.body).not.toHaveProperty('avatarKey');
     for (const field of credentials) expect(res.body).not.toHaveProperty(field);
+  });
+
+  it('POST /api/users/me/avatar 413s above 5 MB', async () => {
+    await request(app.getHttpServer())
+      .post('/api/users/me/avatar')
+      .attach('file', Buffer.alloc(AVATAR_MAX_BYTES + 1), 'avatar.png')
+      .expect(HttpStatus.PAYLOAD_TOO_LARGE);
+  });
+
+  it('GET /api/users/me has a null avatarUrl without an avatar', async () => {
+    const res = await request(app.getHttpServer()).get('/api/users/me');
+
+    expect(res.body.avatarUrl).toBeNull();
   });
 
   it.each([

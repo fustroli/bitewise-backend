@@ -54,10 +54,10 @@ export const config: IConfig = {
     GOOGLE_SECRET: process.env.GOOGLE_SECRET,
     GOOGLE_CALLBACK_URL: process.env.GOOGLE_CALLBACK_URL,
   },
-  GCP: {
-    GCP_PROJECT_ID: process.env.GCP_PROJECT_ID,
-    GCP_PRIVATE_KEY_FILE: process.env.GCP_PRIVATE_KEY_FILE,
-    GCP_BUCKET_NAME: process.env.GCP_BUCKET_NAME,
+  S3: {
+    REGION: process.env.S3_REGION,
+    BUCKET: process.env.S3_BUCKET,
+    CDN_BASE_URL: process.env.S3_CDN_BASE_URL?.replace(/\/+$/, ''),
   },
 };
 
@@ -103,9 +103,10 @@ export interface IConfig {
     GOOGLE_SECRET: string;
     GOOGLE_CALLBACK_URL: string;
   };
-  GCP: {
-    GCP_PROJECT_ID: string;
-    GCP_PRIVATE_KEY_FILE: string;
-    GCP_BUCKET_NAME: string;
+  S3: {
+    REGION: string;
+    BUCKET: string;
+    // CloudFront origin serving the bucket, no trailing slash
+    CDN_BASE_URL: string;
   };
 }
