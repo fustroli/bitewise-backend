@@ -1,0 +1,711 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  BiteWise - single EC2 instance (Next.js + NestJS + MySQL) behind CloudFront,
+  with CodePipeline/CodeBuild/CodeDeploy for both repos. Deploy in us-east-1.
+  The avatar bucket + its CloudFront distribution are created by hand
+  (docs/infra/avatar-storage.md, ADR-0003); this stack only grants the app access.
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: bitewise.rolandfuest.com
+  KeyPairName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Existing EC2 key pair for SSH
+  SshCidr:
+    Type: String
+    Description: Your public IP for SSH, e.g. 203.0.113.10/32
+    AllowedPattern: '^(\d{1,3}\.){3}\d{1,3}/\d{1,2}$'
+  InstanceType:
+    Type: String
+    Default: t3.micro
+    AllowedValues: [t3.micro, t3.small]
+  DbPassword:
+    Type: String
+    NoEcho: true
+    Description: Password for the local MySQL user 'bitewise' (letters and digits only, 12+ chars)
+    AllowedPattern: '^[A-Za-z0-9]{12,}$'
+  GitHubConnectionArn:
+    Type: String
+    Description: ARN of an existing, Available CodeConnections GitHub connection in us-east-1
+    AllowedPattern: '^arn:aws:(codestar-connections|codeconnections):us-east-1:\d{12}:connection/.+$'
+  GitHubOwner:
+    Type: String
+    Default: fustroli
+  BackendRepo:
+    Type: String
+    Default: bitewise-backend
+  FrontendRepo:
+    Type: String
+    Default: bitewise-frontend
+  Branch:
+    Type: String
+    Default: main
+  BudgetEmail:
+    Type: String
+    Description: Email for budget alerts
+  BudgetAmount:
+    Type: Number
+    Default: 15
+  AvatarBucketName:
+    Type: String
+    Description: Existing private S3 bucket for avatars (S3_BUCKET in the backend .env)
+    AllowedPattern: '^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$'
+  UbuntuAmi:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id
+
+Rules:
+  RegionIsUsEast1:
+    Assertions:
+      - Assert: !Equals [!Ref 'AWS::Region', us-east-1]
+        AssertDescription: CloudFront certificates must be in us-east-1 - deploy this stack there.
+
+Mappings:
+  CloudFront:
+    us-east-1:
+      OriginPrefixList: pl-3b927c52 # com.amazonaws.global.cloudfront.origin-facing
+    Policies:
+      CachingDisabled: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+      CachingOptimized: 658327ea-f89d-4fab-a63d-7e88639e58f6
+      AllViewer: 216adef6-5c7f-47e4-b989-5492eafa07d3
+
+Resources:
+  # ---------------------------------------------------------------- Network
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags: [{ Key: Name, Value: bitewise-vpc }]
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags: [{ Key: Name, Value: bitewise-igw }]
+
+  GatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.0.0.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags: [{ Key: Name, Value: bitewise-public-a }]
+
+  PublicSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags: [{ Key: Name, Value: bitewise-public-b }]
+
+  # Reserved for a future RDS instance; no NAT gateway (saves ~$32/month)
+  PrivateSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.0.10.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags: [{ Key: Name, Value: bitewise-private-a }]
+
+  PrivateSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.0.11.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags: [{ Key: Name, Value: bitewise-private-b }]
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags: [{ Key: Name, Value: bitewise-public-rt }]
+
+  PublicDefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: GatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetARouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetA
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnetBRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnetB
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+      Tags: [{ Key: Name, Value: bitewise-private-rt }]
+
+  PrivateSubnetARouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetA
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateSubnetBRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnetB
+      RouteTableId: !Ref PrivateRouteTable
+
+  AppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: BiteWise app - SSH from admin, HTTP from CloudFront only
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref SshCidr
+          Description: SSH from admin IP
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourcePrefixListId:
+            !FindInMap [CloudFront, !Ref 'AWS::Region', OriginPrefixList]
+          Description: HTTP from CloudFront
+      Tags: [{ Key: Name, Value: bitewise-sg }]
+
+  # ---------------------------------------------------------------- Compute
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ec2.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: artifacts-and-backups
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  [
+                    s3:GetObject,
+                    s3:GetObjectVersion,
+                    s3:PutObject,
+                    s3:ListBucket,
+                  ]
+                Resource:
+                  - !GetAtt ArtifactBucket.Arn
+                  - !Sub '${ArtifactBucket.Arn}/*'
+        # Backend avatar uploads (ADR-0003): write and delete only, reads go through CloudFront
+        - PolicyName: avatar-storage
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [s3:PutObject, s3:DeleteObject]
+                Resource: !Sub 'arn:${AWS::Partition}:s3:::${AvatarBucketName}/*'
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: [!Ref InstanceRole]
+
+  AppInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref UbuntuAmi
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyPairName
+      IamInstanceProfile: !Ref InstanceProfile
+      SubnetId: !Ref PublicSubnetA
+      SecurityGroupIds: [!Ref AppSecurityGroup]
+      CreditSpecification:
+        CPUCredits: standard
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeType: gp3
+            VolumeSize: 20
+            DeleteOnTermination: true
+            Encrypted: true
+      Tags:
+        - { Key: Name, Value: bitewise }
+        - { Key: Backup, Value: bitewise }
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -euxo pipefail
+          export DEBIAN_FRONTEND=noninteractive
+
+          # Swap (1 GB RAM is tight)
+          fallocate -l 2G /swapfile
+          chmod 600 /swapfile
+          mkswap /swapfile
+          swapon /swapfile
+          echo '/swapfile none swap sw 0 0' >> /etc/fstab
+
+          apt-get update
+          apt-get install -y curl wget unzip ruby-full nginx mysql-server
+
+          # Node 22 + pm2 (Node is the runtime; Bun, the package manager, is installed
+          # per-user by the backend's scripts/install_dependencies.sh and needs unzip)
+          curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+          apt-get install -y nodejs
+          npm install -g pm2
+          env PATH=$PATH:/usr/bin pm2 startup systemd -u ubuntu --hp /home/ubuntu
+
+          # MySQL tuned for low memory
+          cat > /etc/mysql/mysql.conf.d/zz-lowmem.cnf <<'EOF'
+          [mysqld]
+          performance_schema = OFF
+          innodb_buffer_pool_size = 128M
+          max_connections = 30
+          EOF
+          systemctl restart mysql
+          mysql <<'EOF'
+          CREATE DATABASE IF NOT EXISTS bitewise;
+          CREATE USER IF NOT EXISTS 'bitewise'@'localhost' IDENTIFIED BY '${DbPassword}';
+          GRANT ALL PRIVILEGES ON bitewise.* TO 'bitewise'@'localhost';
+          FLUSH PRIVILEGES;
+          EOF
+
+          # Nginx: / -> Next.js, /api/* -> NestJS (prefix kept; Nest serves under /api)
+          cat > /etc/nginx/sites-available/bitewise <<'EOF'
+          server {
+            listen 80 default_server;
+            server_name _;
+            client_max_body_size 10m;
+
+            location /api/ {
+              proxy_pass http://127.0.0.1:8000;
+              proxy_set_header Host $host;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto https;
+            }
+
+            location / {
+              proxy_pass http://127.0.0.1:3000;
+              proxy_set_header Host $host;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto https;
+            }
+          }
+          EOF
+          ln -sf /etc/nginx/sites-available/bitewise /etc/nginx/sites-enabled/bitewise
+          rm -f /etc/nginx/sites-enabled/default
+          systemctl reload nginx
+
+          # App dirs owned by ubuntu (CodeDeploy hooks run as ubuntu)
+          mkdir -p /home/ubuntu/bitewise-backend /home/ubuntu/bitewise-frontend
+          chown -R ubuntu:ubuntu /home/ubuntu/bitewise-backend /home/ubuntu/bitewise-frontend
+
+          # CodeDeploy agent
+          cd /tmp
+          wget https://aws-codedeploy-${AWS::Region}.s3.${AWS::Region}.amazonaws.com/latest/install
+          chmod +x ./install
+          ./install auto
+          systemctl enable --now codedeploy-agent
+
+  ElasticIp:
+    Type: AWS::EC2::EIP
+    DependsOn: GatewayAttachment
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref AppInstance
+      Tags: [{ Key: Name, Value: bitewise-eip }]
+
+  # ---------------------------------------------------------------- Edge
+  Certificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref DomainName
+      ValidationMethod: DNS
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: BiteWise
+        Aliases: [!Ref DomainName]
+        HttpVersion: http2and3
+        PriceClass: PriceClass_100
+        ViewerCertificate:
+          AcmCertificateArn: !Ref Certificate
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+        Origins:
+          - Id: ec2
+            # EC2 public DNS of the Elastic IP (CloudFront can't use a bare IP)
+            DomainName: !Join
+              - ''
+              - - ec2-
+                - !Join ['-', !Split ['.', !Ref ElasticIp]]
+                - .compute-1.amazonaws.com
+            CustomOriginConfig:
+              HTTPPort: 80
+              OriginProtocolPolicy: http-only
+        DefaultCacheBehavior:
+          TargetOriginId: ec2
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS, PUT, PATCH, POST, DELETE]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          CachePolicyId: !FindInMap [CloudFront, Policies, CachingDisabled]
+          OriginRequestPolicyId: !FindInMap [CloudFront, Policies, AllViewer]
+        CacheBehaviors:
+          - PathPattern: /_next/static/*
+            TargetOriginId: ec2
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD]
+            CachedMethods: [GET, HEAD]
+            Compress: true
+            CachePolicyId: !FindInMap [CloudFront, Policies, CachingOptimized]
+
+  # ---------------------------------------------------------------- CI/CD
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-old-artifacts
+            Status: Enabled
+            Prefix: pipeline/
+            ExpirationInDays: 30
+
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: codebuild.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: codebuild
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  [logs:CreateLogGroup, logs:CreateLogStream, logs:PutLogEvents]
+                Resource: '*'
+              - Effect: Allow
+                Action: [s3:GetObject, s3:GetObjectVersion, s3:PutObject]
+                Resource: !Sub '${ArtifactBucket.Arn}/*'
+
+  BackendBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: bitewise-backend-build
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Source: { Type: CODEPIPELINE }
+      Artifacts: { Type: CODEPIPELINE }
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:7.0
+      LogsConfig:
+        CloudWatchLogs: { Status: ENABLED, GroupName: /codebuild/bitewise }
+
+  FrontendBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: bitewise-frontend-build
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Source: { Type: CODEPIPELINE }
+      Artifacts: { Type: CODEPIPELINE }
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:7.0
+        EnvironmentVariables:
+          - Name: NEXT_PUBLIC_API_URL
+            Value: !Sub 'https://${DomainName}/api'
+      LogsConfig:
+        CloudWatchLogs: { Status: ENABLED, GroupName: /codebuild/bitewise }
+
+  CodeDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: codedeploy.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole
+
+  DeployApp:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: bitewise
+      ComputePlatform: Server
+
+  BackendDeploymentGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName: !Ref DeployApp
+      DeploymentGroupName: backend
+      ServiceRoleArn: !GetAtt CodeDeployRole.Arn
+      DeploymentConfigName: CodeDeployDefault.AllAtOnce
+      Ec2TagFilters:
+        - { Key: Name, Value: bitewise, Type: KEY_AND_VALUE }
+
+  FrontendDeploymentGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName: !Ref DeployApp
+      DeploymentGroupName: frontend
+      ServiceRoleArn: !GetAtt CodeDeployRole.Arn
+      DeploymentConfigName: CodeDeployDefault.AllAtOnce
+      Ec2TagFilters:
+        - { Key: Name, Value: bitewise, Type: KEY_AND_VALUE }
+
+  PipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: codepipeline.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: pipeline
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  [
+                    s3:GetObject,
+                    s3:GetObjectVersion,
+                    s3:PutObject,
+                    s3:GetBucketVersioning,
+                    s3:ListBucket,
+                  ]
+                Resource:
+                  - !GetAtt ArtifactBucket.Arn
+                  - !Sub '${ArtifactBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  [
+                    codestar-connections:UseConnection,
+                    codeconnections:UseConnection,
+                  ]
+                Resource: !Ref GitHubConnectionArn
+              - Effect: Allow
+                Action: [codebuild:StartBuild, codebuild:BatchGetBuilds]
+                Resource: [!GetAtt BackendBuild.Arn, !GetAtt FrontendBuild.Arn]
+              - Effect: Allow
+                Action:
+                  - codedeploy:CreateDeployment
+                  - codedeploy:GetApplication
+                  - codedeploy:GetApplicationRevision
+                  - codedeploy:GetDeployment
+                  - codedeploy:GetDeploymentConfig
+                  - codedeploy:RegisterApplicationRevision
+                Resource: '*'
+
+  BackendPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: bitewise-backend
+      PipelineType: V2
+      RoleArn: !GetAtt PipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: GitHub
+              ActionTypeId:
+                {
+                  Category: Source,
+                  Owner: AWS,
+                  Provider: CodeStarSourceConnection,
+                  Version: '1',
+                }
+              Configuration:
+                ConnectionArn: !Ref GitHubConnectionArn
+                FullRepositoryId: !Sub '${GitHubOwner}/${BackendRepo}'
+                BranchName: !Ref Branch
+                OutputArtifactFormat: CODE_ZIP
+              OutputArtifacts: [{ Name: Source }]
+        - Name: Build
+          Actions:
+            - Name: Build
+              ActionTypeId:
+                {
+                  Category: Build,
+                  Owner: AWS,
+                  Provider: CodeBuild,
+                  Version: '1',
+                }
+              Configuration:
+                ProjectName: !Ref BackendBuild
+              InputArtifacts: [{ Name: Source }]
+              OutputArtifacts: [{ Name: Build }]
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                {
+                  Category: Deploy,
+                  Owner: AWS,
+                  Provider: CodeDeploy,
+                  Version: '1',
+                }
+              Configuration:
+                ApplicationName: !Ref DeployApp
+                DeploymentGroupName: !Ref BackendDeploymentGroup
+              InputArtifacts: [{ Name: Build }]
+
+  FrontendPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: bitewise-frontend
+      PipelineType: V2
+      RoleArn: !GetAtt PipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: GitHub
+              ActionTypeId:
+                {
+                  Category: Source,
+                  Owner: AWS,
+                  Provider: CodeStarSourceConnection,
+                  Version: '1',
+                }
+              Configuration:
+                ConnectionArn: !Ref GitHubConnectionArn
+                FullRepositoryId: !Sub '${GitHubOwner}/${FrontendRepo}'
+                BranchName: !Ref Branch
+                OutputArtifactFormat: CODE_ZIP
+              OutputArtifacts: [{ Name: Source }]
+        - Name: Build
+          Actions:
+            - Name: Build
+              ActionTypeId:
+                {
+                  Category: Build,
+                  Owner: AWS,
+                  Provider: CodeBuild,
+                  Version: '1',
+                }
+              Configuration:
+                ProjectName: !Ref FrontendBuild
+              InputArtifacts: [{ Name: Source }]
+              OutputArtifacts: [{ Name: Build }]
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                {
+                  Category: Deploy,
+                  Owner: AWS,
+                  Provider: CodeDeploy,
+                  Version: '1',
+                }
+              Configuration:
+                ApplicationName: !Ref DeployApp
+                DeploymentGroupName: !Ref FrontendDeploymentGroup
+              InputArtifacts: [{ Name: Build }]
+
+  # ---------------------------------------------------------------- Ops
+  DlmRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: dlm.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSDataLifecycleManagerServiceRole
+
+  SnapshotPolicy:
+    Type: AWS::DLM::LifecyclePolicy
+    Properties:
+      Description: BiteWise daily snapshots keep 7
+      State: ENABLED
+      ExecutionRoleArn: !GetAtt DlmRole.Arn
+      PolicyDetails:
+        PolicyType: EBS_SNAPSHOT_MANAGEMENT
+        ResourceTypes: [INSTANCE]
+        TargetTags: [{ Key: Backup, Value: bitewise }]
+        Schedules:
+          - Name: daily
+            CopyTags: true
+            CreateRule: { Interval: 24, IntervalUnit: HOURS, Times: ['03:00'] }
+            RetainRule: { Count: 7 }
+
+  MonthlyBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: bitewise-monthly
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit: { Amount: !Ref BudgetAmount, Unit: USD }
+      NotificationsWithSubscribers:
+        - Notification:
+            {
+              NotificationType: ACTUAL,
+              ComparisonOperator: GREATER_THAN,
+              Threshold: 80,
+            }
+          Subscribers: [{ SubscriptionType: EMAIL, Address: !Ref BudgetEmail }]
+        - Notification:
+            {
+              NotificationType: FORECASTED,
+              ComparisonOperator: GREATER_THAN,
+              Threshold: 100,
+            }
+          Subscribers: [{ SubscriptionType: EMAIL, Address: !Ref BudgetEmail }]
+
+Outputs:
+  CloudFrontDomain:
+    Description: Point a CNAME from your subdomain to this
+    Value: !GetAtt Distribution.DomainName
+  ElasticIp:
+    Value: !Ref ElasticIp
+  SshCommand:
+    Value: !Sub 'ssh -i bitewise-key.pem ubuntu@${ElasticIp}'
+  AppUrl:
+    Value: !Sub 'https://${DomainName}'
