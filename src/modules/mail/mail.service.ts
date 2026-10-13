@@ -16,7 +16,9 @@ export class MailService {
     try {
       await this.transport.send({ from: config.MAIL.FROM, to, ...content });
     } catch (error) {
-      this.logger.error(`Failed to send "${content.subject}"`, error);
+      this.logger.error(
+        `Failed to send "${content.subject}": ${String(error)}`,
+      );
     }
   }
 }

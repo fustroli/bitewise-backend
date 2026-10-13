@@ -36,8 +36,7 @@ describe('MailService', () => {
     ).resolves.toBeUndefined();
 
     expect(error).toHaveBeenCalledWith(
-      'Failed to send "Subject"',
-      expect.any(Error),
+      'Failed to send "Subject": Error: SES down',
     );
     error.mockRestore();
   });
