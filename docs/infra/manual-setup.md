@@ -14,7 +14,6 @@ Avatar bucket + CloudFront: see `avatar-storage.md`.
 | AMI | |
 | VPC / subnet | |
 | Elastic IP | |
-| Monthly budget | |
 
 ## 1. Network
 
@@ -64,25 +63,24 @@ Avatar bucket + CloudFront: see `avatar-storage.md`.
 
 ## 9. Backups
 
-> **Resume here:** restore test, then DLM snapshots.
+> **Resume here:** section 10 log retention (log group now exists). Section 11 (daytime schedule) deferred until dev phase is done.
 
 - [x] Separate backup bucket (not the avatar bucket: its policy lets CloudFront read `/*`),
       Block Public Access on, lifecycle: expire `backups/` after 14 days
 - [x] Nightly `mysqldump | gzip` to S3 `backups/` (`/usr/local/bin/bitewise-db-backup`,
       `/etc/cron.d/bitewise-db-backup`, 03:30 UTC, runs as root via `auth_socket`)
-- [ ] Restore test into a scratch DB (a backup never restored isn't a backup):
+- [x] Restore test into a scratch DB (a backup never restored isn't a backup):
   ```bash
   sudo mysql -e 'CREATE DATABASE restore_test'
   aws s3 cp s3://<backup-bucket>/backups/bitewise-<date>.sql.gz - | gunzip | sudo mysql restore_test
   sudo mysql -e 'SHOW TABLES FROM restore_test; DROP DATABASE restore_test'
   ```
-- [ ] EBS daily snapshots (DLM): tag instance `Backup=bitewise`, EC2 > Lifecycle Manager > EBS
+- [x] EBS daily snapshots (DLM): tag instance `Backup=bitewise`, EC2 > Lifecycle Manager > EBS
       snapshot policy targeting that tag, daily, keep 7
 - Restore for real: `aws s3 cp s3://<backup-bucket>/backups/<file> - | gunzip | sudo mysql bitewise`
 
 ## 10. Cost guard
 
-- [ ] Budget alert (email)
 - [ ] CloudWatch log groups (e.g. `/codebuild/bitewise`): set retention to 14 days after the first build creates it (default is never expire)
 
 ## 11. Daytime-only schedule (optional, saves ~$4-5/mo)
@@ -99,6 +97,19 @@ Expect:
 - Site returns 502/504 via CloudFront while stopped.
 - ~1-2 min after start before the site responds.
 - Pipeline deploys fail while stopped (CodeDeploy agent is down); deploy during up-hours or re-run after a start.
+
+## 12. Pipeline (CodePipeline, backend + frontend)
+
+Auto-trigger on push to `main`. Backend deploy runs `scripts/migrate.sh` (AfterInstall) before start.
+
+- [x] 1. Artifact bucket (private, versioned, expire after 14 days), `s3:GetObject`/`GetObjectVersion`
+      on it added to `bitewise-ec2-role`, GitHub connection `bitewise-github` (Available, both repos)
+- [x] 2. CodeDeploy agent on the instance, instance tagged `Name=bitewise`
+- [x] 3. CodeDeploy service role, app `bitewise`, deployment groups `backend` + `frontend` (AllAtOnce, tag `Name=bitewise-app`)
+- [x] 4. CodeBuild service role + projects `bitewise-backend-build`, `bitewise-frontend-build`
+      (FE env: `COOKIE_DOMAIN`, `NEXT_PUBLIC_API_URL`); log group `/codebuild/bitewise`, retention 14 days
+- [x] 5. Pipeline service role + pipelines `bitewise-backend`, `bitewise-frontend` (Source > Build > Deploy)
+- [x] 6. Verify: push a commit, all stages green, `GET /api/health`
 
 ## Gotchas hit
 
