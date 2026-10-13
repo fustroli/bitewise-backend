@@ -39,6 +39,11 @@ Avatar bucket + CloudFront: see `avatar-storage.md`.
 ## 5. Server software
 
 - [x] nginx: `/` to Next.js `:3000`, `/api/` to Nest `:8000`
+- [x] nginx sets `Host $host`, `X-Forwarded-Host $host`, `X-Forwarded-Proto https` (CloudFront
+  terminates TLS, so `$scheme` would be `http`) in both `location` blocks. Config:
+  `/etc/nginx/sites-available/bitewise` (`sites-enabled` is a symlink; `grep -r` skips it)
+- Next builds `request.url` from its own bind address (`localhost:3000`), ignoring `Host` and
+  `X-Forwarded-Host`. Frontend redirects must be relative or use a configured public URL (#94)
 - [x] MySQL 8, low-memory config, `bitewise` DB + user
 - [x] Node 22, pm2 (+ `pm2 startup`)
 - [x] Bun (per-user, needs `unzip`)
