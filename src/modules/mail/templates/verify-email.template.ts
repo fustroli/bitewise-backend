@@ -1,18 +1,17 @@
 import { IMailContent } from '../mail-transport.js';
+import { renderLayout } from './layout.js';
 
-/** `link` is trusted: built by the app, not taken from input. */
 export function verifyEmailTemplate(link: string): IMailContent {
-  return {
+  return renderLayout({
     subject: 'Verify your BiteWise email',
-    html: `<p>Welcome to BiteWise!</p>
-<p>Confirm your email address by opening this link within 24 hours:</p>
-<p><a href="${link}">Verify my email</a></p>
-<p>If you didn't sign up for BiteWise, you can ignore this email.</p>`,
-    text: `Welcome to BiteWise!
-
-Confirm your email address by opening this link within 24 hours:
-${link}
-
-If you didn't sign up for BiteWise, you can ignore this email.`,
-  };
+    preheader: 'Confirm your email address to finish setting up BiteWise.',
+    heading: 'Confirm your email',
+    paragraphs: [
+      'Welcome to BiteWise! Please confirm this is your email address.',
+      'The link expires in 24 hours.',
+    ],
+    action: { label: 'Verify email', url: link },
+    reason:
+      "You're receiving this because this address was used to sign up for BiteWise. If that wasn't you, you can ignore this email.",
+  });
 }

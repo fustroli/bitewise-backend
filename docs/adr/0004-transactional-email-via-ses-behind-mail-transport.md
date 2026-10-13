@@ -6,7 +6,7 @@ status: accepted
 
 Email verification (and later password reset) needs transactional email. The app is hosted on AWS, so it sends through Amazon SES v2 (`@aws-sdk/client-sesv2`), with credentials from the AWS SDK default provider chain (instance role in prod), never from config, as for S3 (ADR-0003).
 
-Feature code depends on `MailService`, which sends over a `MailTransport` port picked at boot by `MAIL_TRANSPORT`: `ses` in prod, `smtp` (nodemailer, unauthenticated) for a local catcher like Mailpit, `log` to send nothing. Templates are plain TS functions returning `{subject, html, text}`.
+Feature code depends on `MailService`, which sends over a `MailTransport` port picked at boot by `MAIL_TRANSPORT`: `ses` in prod, `smtp` (nodemailer, unauthenticated) for a local catcher like Mailpit, `log` to send nothing. Templates are plain TS functions returning `{subject, html, text}`, built with `renderLayout` (`src/modules/mail/templates/layout.ts`): the shared branded layout that renders both the HTML and the plain-text version, escaping every value. New templates go through it.
 
 Sending is fire-and-forget: the request that triggers an email doesn't wait for it, and a failed send is logged, never surfaced. There is no queue or retry; a lost verification email is recovered by the User requesting another.
 
