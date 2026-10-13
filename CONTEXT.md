@@ -18,7 +18,7 @@ _Avoid_: Settings (for the whole page), user details
 Which kinds of email a User receives, and the default email address they are sent to (the sign-in email unless changed).
 
 **Email verification**:
-Proof that a User controls their sign-in email: opening a single-use link mailed to it, valid for 24 hours, or signing in with Google when Google has verified that email. Requesting a new link invalidates earlier ones. Unverified Users can still sign in and use BiteWise. If a Google identity with a verified email is linked to an unverified User, that User's password and Sessions are dropped, since whoever set the password never proved they own the email.
+Proof that a User controls their sign-in email: opening a single-use link mailed to it, valid for 24 hours, or signing in with Google when Google has verified that email. Requesting a new link invalidates earlier ones. Unverified Users can still sign in and use BiteWise, except uploading an avatar (it is publicly served). If a Google identity with a verified email is linked to an unverified User, that User's password and Sessions are dropped, since whoever set the password never proved they own the email.
 _Avoid_: Confirmation, activation
 
 **Session**:

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -102,15 +103,22 @@ export class ProfileService {
     await this.deleteAvatarFile(user.avatarKey);
   }
 
-  /** Upload new, save the User, then best-effort delete the old object. */
+  /**
+   * Upload new, save the User, then best-effort delete the old object.
+   * Needs a verified email: avatars are publicly served from the CDN.
+   */
   public async uploadAvatar(
     file: Express.Multer.File,
     userId: number,
   ): Promise<User> {
     if (!file) throw new BadRequestException('Uploading a file is required');
 
-    const body = await encodeAvatar(file);
     const user = await this.getProfile(userId);
+    if (!user.emailVerified)
+      throw new ForbiddenException(
+        'Verify your email address to upload an avatar',
+      );
+    const body = await encodeAvatar(file);
     const previousKey = user.avatarKey;
     const key = avatarKey(userId);
 
