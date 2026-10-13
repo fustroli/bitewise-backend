@@ -6,6 +6,7 @@ import { StateStore } from 'passport-oauth2';
 import googleOauthConfig from '../config/google-oauth.config.js';
 import { ISocialProfile } from '../interfaces/index.js';
 import { CookieStateStore } from './cookie-state.store.js';
+import { normalizeEmail } from '../../../common/decorators/index.js';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy) {
@@ -34,7 +35,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
     return {
       provider: 'google',
       providerId: profile.id,
-      email: email.value,
+      email: normalizeEmail(email.value),
       emailVerified: email.verified === true,
     };
   }
