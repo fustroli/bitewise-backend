@@ -63,7 +63,7 @@ Avatar bucket + CloudFront: see `avatar-storage.md`.
 
 ## 9. Backups
 
-> **Resume here:** section 10 log retention (log group now exists). Section 11 (daytime schedule) deferred until dev phase is done.
+> **Resume here:** nothing pending. Section 11 (daytime schedule) deferred until dev phase is done.
 
 - [x] Separate backup bucket (not the avatar bucket: its policy lets CloudFront read `/*`),
       Block Public Access on, lifecycle: expire `backups/` after 14 days
@@ -81,7 +81,7 @@ Avatar bucket + CloudFront: see `avatar-storage.md`.
 
 ## 10. Cost guard
 
-- [ ] CloudWatch log groups (e.g. `/codebuild/bitewise`): set retention to 14 days after the first build creates it (default is never expire)
+- [x] CloudWatch log groups (e.g. `/codebuild/bitewise`): set retention to 14 days after the first build creates it (default is never expire)
 
 ## 11. Daytime-only schedule (optional, saves ~$4-5/mo)
 
