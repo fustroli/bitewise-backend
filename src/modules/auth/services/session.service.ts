@@ -24,6 +24,7 @@ import { Session } from '../entities/index.js';
 import { sha256 } from '../crypto/index.js';
 import type { StringValue } from 'ms';
 import { User } from '../../user/entities/index.js';
+import { MailService, passwordChangedTemplate } from '../../mail/index.js';
 import { config } from '../../../config/index.js';
 import parse from 'parse-duration';
 
@@ -64,6 +65,7 @@ export class SessionService {
     @InjectRepository(Session)
     private readonly sessions: Repository<Session>,
     private readonly jwt: JwtService,
+    private readonly mail: MailService,
   ) {}
 
   /** A taken email surfaces as 409 through DuplicateEntryFilter. */
@@ -177,7 +179,10 @@ export class SessionService {
     await this.sessions.delete({ id: sid, user: { id: sub } });
   }
 
-  /** Changes the password and ends every other Session of the User. */
+  /**
+   * Changes the password, ends every other Session of the User, and mails
+   * them a notice.
+   */
   async changePassword(
     userId: number,
     sid: string,
@@ -193,6 +198,7 @@ export class SessionService {
       hash: await bcrypt.hash(dto.password, config.SALT_WORK_FACTOR),
     });
     await this.sessions.delete({ user: { id: user.id }, id: Not(sid) });
+    void this.mail.send(user.email, passwordChangedTemplate());
   }
 
   /**

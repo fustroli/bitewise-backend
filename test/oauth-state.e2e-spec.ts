@@ -10,7 +10,7 @@ mockThrottler();
 const { setupApp } = await import('../src/app.setup.js');
 const { AuthController } =
   await import('../src/modules/auth/controller/index.js');
-const { EmailVerificationService, SessionService } =
+const { EmailVerificationService, PasswordResetService, SessionService } =
   await import('../src/modules/auth/services/index.js');
 const { GoogleStrategy } =
   await import('../src/modules/auth/strategy/index.js');
@@ -53,6 +53,7 @@ describe('Google OAuth state (e2e)', () => {
         GoogleStrategy,
         { provide: SessionService, useValue: sessions },
         { provide: EmailVerificationService, useValue: {} },
+        { provide: PasswordResetService, useValue: {} },
         {
           provide: googleOauthConfig.KEY,
           useValue: {
