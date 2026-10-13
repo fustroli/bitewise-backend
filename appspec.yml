@@ -21,6 +21,9 @@ hooks:
     - location: scripts/install_dependencies.sh
       timeout: 300
       runas: ubuntu
+    - location: scripts/migrate.sh
+      timeout: 120
+      runas: ubuntu
   ApplicationStart:
     - location: scripts/start.sh
       timeout: 60
