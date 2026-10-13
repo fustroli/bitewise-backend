@@ -1,7 +1,10 @@
 import { randomUUID } from 'crypto';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { migrations } from '../../src/database/migrations/index.js';
-import { Session } from '../../src/modules/auth/entities/index.js';
+import {
+  EmailVerificationToken,
+  Session,
+} from '../../src/modules/auth/entities/index.js';
 import { Ingredient } from '../../src/modules/ingredient/entities/index.js';
 import { Meal, MealIngredient } from '../../src/modules/meal/entities/index.js';
 import {
@@ -19,6 +22,7 @@ const entities = [
   MealPlan,
   MealPlanMeal,
   Session,
+  EmailVerificationToken,
 ];
 
 function options(database?: string): DataSourceOptions {

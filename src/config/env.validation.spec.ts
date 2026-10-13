@@ -24,6 +24,8 @@ const validEnv = {
   S3_REGION: 'eu-central-1',
   S3_BUCKET: 'bucket',
   S3_CDN_BASE_URL: 'https://cdn.example.com',
+  MAIL_TRANSPORT: 'log',
+  MAIL_FROM: 'BiteWise <no-reply@example.com>',
 };
 
 const invalidKeys = (env: NodeJS.ProcessEnv) =>
@@ -64,8 +66,37 @@ describe('validateEnv', () => {
     ['SWAGGER_ENABLED', 'yes'],
     ['TYPEORM_PORT', '70000'],
     ['TYPEORM_PASSWORD', ''],
+    ['MAIL_TRANSPORT', 'sendgrid'],
+    ['MAIL_FROM', 'BiteWise'],
   ])('rejects %s=%p', (key, value) => {
     expect(invalidKeys({ ...validEnv, [key]: value })).toEqual([key]);
+  });
+
+  it('requires AWS_REGION for the ses transport only', () => {
+    expect(invalidKeys({ ...validEnv, MAIL_TRANSPORT: 'ses' })).toEqual([
+      'AWS_REGION',
+    ]);
+    expect(
+      validateEnv({
+        ...validEnv,
+        MAIL_TRANSPORT: 'ses',
+        AWS_REGION: 'eu-central-1',
+      }),
+    ).toEqual([]);
+  });
+
+  it('requires SMTP_HOST and SMTP_PORT for the smtp transport only', () => {
+    expect(invalidKeys({ ...validEnv, MAIL_TRANSPORT: 'smtp' }).sort()).toEqual(
+      ['SMTP_HOST', 'SMTP_PORT'],
+    );
+    expect(
+      validateEnv({
+        ...validEnv,
+        MAIL_TRANSPORT: 'smtp',
+        SMTP_HOST: 'localhost',
+        SMTP_PORT: '1025',
+      }),
+    ).toEqual([]);
   });
 });
 

@@ -4,6 +4,7 @@ export function stubUser(override: Partial<User> = {}): User {
   return {
     id: 1,
     email: 'test@mail.com',
+    emailVerified: false,
     ingredients: [],
     hash: 'hashedPassword',
     meals: [],

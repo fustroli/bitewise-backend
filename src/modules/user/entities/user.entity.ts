@@ -40,6 +40,10 @@ export class User {
   @ActiveColumn('email')
   activeEmail?: string | null;
 
+  // Proven by an Email verification link or a provider-verified Google email
+  @Column({ default: false })
+  emailVerified: boolean;
+
   @OneToMany(() => Ingredient, (ingredient) => ingredient.user)
   ingredients: Relation<Ingredient>[];
 
@@ -58,9 +62,10 @@ export class User {
   @Column(() => NotificationSettings)
   notificationSettings: NotificationSettings;
 
+  // bcrypt hash; null for a User who can only sign in with Google
   @Exclude()
-  @Column({ nullable: true })
-  hash: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  hash: string | null;
 
   // Object key in the FileStore; the response's avatarUrl is built from it
   @Exclude()
