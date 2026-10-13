@@ -15,10 +15,16 @@ import {
   CreateUserDto,
   LoginUserDto,
   ChangePasswordDto,
+  ConfirmPasswordResetDto,
+  RequestPasswordResetDto,
   VerifyEmailDto,
 } from '../dto/index.js';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { EmailVerificationService, SessionService } from '../services/index.js';
+import {
+  EmailVerificationService,
+  PasswordResetService,
+  SessionService,
+} from '../services/index.js';
 import { Throttle } from '@nestjs/throttler';
 import { Response } from 'express';
 import { GoogleAuthGuard } from '../guard/index.js';
@@ -38,6 +44,7 @@ export class AuthController {
   constructor(
     private readonly sessions: SessionService,
     private readonly verification: EmailVerificationService,
+    private readonly passwordReset: PasswordResetService,
   ) {}
 
   @Post('signup')
@@ -136,6 +143,24 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   resendVerification(@CurrentUser() user: IAuthenticatedUser) {
     return this.verification.resend(user.userId);
+  }
+
+  // Always 204, so the response never tells whether the email has an account
+  @Post('password-reset')
+  @Public()
+  @Throttle(RESEND_LIMIT)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  requestPasswordReset(@Body() dto: RequestPasswordResetDto) {
+    return this.passwordReset.request(dto.email);
+  }
+
+  // No auto sign-in: every Session ends, the frontend sends the User to sign in
+  @Post('password-reset/confirm')
+  @Public()
+  @Throttle(CREDENTIAL_LIMIT)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  confirmPasswordReset(@Body() dto: ConfirmPasswordResetDto) {
+    return this.passwordReset.confirm(dto.token, dto.password);
   }
 
   // A browser navigation: a known refusal lands on the frontend, not a JSON page

@@ -8,6 +8,7 @@ import {
 } from '../../../../test/int/test-database.js';
 import { toConflict } from '../../../common/filters/index.js';
 import { config } from '../../../config/index.js';
+import { IMailMessage, MailService, MailTransport } from '../../mail/index.js';
 import { User } from '../../user/entities/index.js';
 import { Session } from '../entities/index.js';
 import { IJwtClaims, ISocialProfile } from '../interfaces/index.js';
@@ -16,10 +17,19 @@ import { ISessionTokens, SessionService } from './session.service.js';
 const PASSWORD = 'StrongPassword1!';
 const NEW_PASSWORD = 'NewPassword1!';
 
+class RecordingTransport extends MailTransport {
+  readonly sent: IMailMessage[] = [];
+
+  async send(message: IMailMessage): Promise<void> {
+    this.sent.push(message);
+  }
+}
+
 describe('SessionService', () => {
   let dataSource: DataSource;
   let sessions: SessionService;
   const jwt = new JwtService();
+  const transport = new RecordingTransport();
 
   const signUp = (email = `${randomUUID()}@example.com`) =>
     sessions.signUp({ email, password: PASSWORD, confirmPassword: PASSWORD });
@@ -40,12 +50,15 @@ describe('SessionService', () => {
     config.JWT.ACCESS_TOKEN_EXPIRATION = '15m';
     config.JWT.REFRESH_TOKEN_SECRET = 'refresh-secret';
     config.JWT.REFRESH_TOKEN_EXPIRATION = '7d';
+    // The password-changed notice links to the frontend
+    config.FRONTEND_URL = 'http://frontend.test';
 
     dataSource = await connectTestDatabase(await createTestDatabase());
     sessions = new SessionService(
       dataSource.getRepository(User),
       dataSource.getRepository(Session),
       jwt,
+      new MailService(transport),
     );
   });
 
@@ -292,6 +305,20 @@ describe('SessionService', () => {
       ).rejects.toThrow(UnauthorizedException);
     });
 
+    it('mails the User a password-changed notice', async () => {
+      const { user, tokens } = await signUp();
+
+      await sessions.changePassword(
+        user.id,
+        claimsOf(tokens.accessToken).sid,
+        change(PASSWORD),
+      );
+
+      expect(transport.sent.findLast((m) => m.to === user.email)?.subject).toBe(
+        'Your BiteWise password was changed',
+      );
+    });
+
     it('rejects a wrong old password with 401 and changes nothing', async () => {
       const { user, tokens } = await signUp();
 
@@ -305,6 +332,7 @@ describe('SessionService', () => {
       await expect(
         sessions.signIn({ email: user.email, password: PASSWORD }),
       ).resolves.toBeDefined();
+      expect(transport.sent.some((m) => m.to === user.email)).toBe(false);
     });
   });
 

@@ -12,7 +12,11 @@ import {
   EmailVerificationCleanupTask,
   SessionCleanupTask,
 } from './tasks/index.js';
-import { EmailVerificationService, SessionService } from './services/index.js';
+import {
+  EmailVerificationService,
+  PasswordResetService,
+  SessionService,
+} from './services/index.js';
 import { MailModule } from '../mail/index.js';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../user/entities/index.js';
@@ -32,6 +36,7 @@ import googleOauthConfig from './config/google-oauth.config.js';
     SessionCleanupTask,
     EmailVerificationService,
     EmailVerificationCleanupTask,
+    PasswordResetService,
     JwtStrategy,
     GoogleStrategy,
     // Every route needs an access token unless marked @Public()

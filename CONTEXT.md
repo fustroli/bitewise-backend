@@ -21,6 +21,10 @@ Which kinds of email a User receives, and the default email address they are sen
 Proof that a User controls their sign-in email: opening a single-use link mailed to it, valid for 24 hours, or signing in with Google when Google has verified that email. Requesting a new link invalidates earlier ones. Unverified Users can still sign in and use BiteWise, except uploading an avatar (it is publicly served). If a Google identity with a verified email is linked to an unverified User, that User's password and Sessions are dropped, since whoever set the password never proved they own the email.
 _Avoid_: Confirmation, activation
 
+**Password reset**:
+Setting a new password by opening a single-use link mailed to the sign-in email, valid for 1 hour; only submitting the new password uses the link up. Since the link proves the User controls their sign-in email, it also completes Email verification, and a Google-only User can use it to set a first password. A reset ends every Session of the User and cancels a pending Email change. Asking for a link never reveals whether an account exists for the email.
+_Avoid_: Forgot password (for the process), password recovery
+
 **Session**:
 The period during which a User is signed in on one device. It starts at sign-in and ends at sign-out, account deletion, or when its refresh token is rejected; a User may have several Sessions at once.
 _Avoid_: Login (as a noun), auth, token

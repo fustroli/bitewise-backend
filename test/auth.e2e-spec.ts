@@ -17,13 +17,14 @@ mockThrottler();
 const { setupApp } = await import('../src/app.setup.js');
 const { AuthController } =
   await import('../src/modules/auth/controller/index.js');
-const { EmailVerificationService, SessionService } =
+const { EmailVerificationService, PasswordResetService, SessionService } =
   await import('../src/modules/auth/services/index.js');
 const { GoogleAuthGuard } = await import('../src/modules/auth/guard/index.js');
 const { Session } = await import('../src/modules/auth/entities/index.js');
 const { stubUser, User } =
   await import('../src/modules/user/entities/index.js');
 const { config } = await import('../src/config/index.js');
+const { MailService } = await import('../src/modules/mail/index.js');
 
 const tokens = { accessToken: 'access-jwt', refreshToken: 'refresh-jwt' };
 const credentials = { email: 'test@mail.com', password: 'StrongPassword1!' };
@@ -70,6 +71,11 @@ describe('Auth cookies (e2e)', () => {
     verify: jest.fn(async () => undefined),
   };
 
+  const passwordReset = {
+    request: jest.fn(async () => undefined),
+    confirm: jest.fn(async () => undefined),
+  };
+
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [PassportModule.register({})],
@@ -77,6 +83,7 @@ describe('Auth cookies (e2e)', () => {
       providers: [
         { provide: SessionService, useValue: sessions },
         { provide: EmailVerificationService, useValue: verification },
+        { provide: PasswordResetService, useValue: passwordReset },
       ],
     })
       .overrideGuard(GoogleAuthGuard)
@@ -145,6 +152,45 @@ describe('Auth cookies (e2e)', () => {
 
     expect(verification.verify).not.toHaveBeenCalled();
   });
+
+  it('POST /api/auth/password-reset normalizes the email and answers 204', async () => {
+    await request(app.getHttpServer())
+      .post('/api/auth/password-reset')
+      .send({ email: 'Test@Mail.com' })
+      .expect(HttpStatus.NO_CONTENT);
+
+    expect(passwordReset.request).toHaveBeenCalledWith('test@mail.com');
+  });
+
+  it('POST /api/auth/password-reset/confirm sets the password with 204 and starts no Session', async () => {
+    const password = 'NewPassword1!';
+
+    const res = await request(app.getHttpServer())
+      .post('/api/auth/password-reset/confirm')
+      .send({ token: 'link-token', password, passwordConfirm: password })
+      .expect(HttpStatus.NO_CONTENT);
+
+    expect(passwordReset.confirm).toHaveBeenCalledWith('link-token', password);
+    expect(cookiesOf(res)).toHaveLength(0);
+  });
+
+  it.each([
+    ['a weak password', { password: 'weak', passwordConfirm: 'weak' }],
+    [
+      'mismatched passwords',
+      { password: 'NewPassword1!', passwordConfirm: 'OtherPassword1!' },
+    ],
+  ])(
+    'POST /api/auth/password-reset/confirm with %s is a 400',
+    async (_, body) => {
+      await request(app.getHttpServer())
+        .post('/api/auth/password-reset/confirm')
+        .send({ token: 'link-token', ...body })
+        .expect(HttpStatus.BAD_REQUEST);
+
+      expect(passwordReset.confirm).not.toHaveBeenCalled();
+    },
+  );
 
   it('POST /api/auth/refresh rotates the Bearer refresh token and resets the cookies', async () => {
     const res = await request(app.getHttpServer())
@@ -231,6 +277,8 @@ describe('POST /api/auth/signout (e2e)', () => {
       providers: [
         SessionService,
         { provide: EmailVerificationService, useValue: {} },
+        { provide: PasswordResetService, useValue: {} },
+        { provide: MailService, useValue: {} },
         { provide: JwtService, useValue: jwt },
         { provide: getRepositoryToken(User), useValue: {} },
         { provide: getRepositoryToken(Session), useValue: sessionRepo },
