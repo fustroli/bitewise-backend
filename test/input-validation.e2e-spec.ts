@@ -11,8 +11,12 @@ mockThrottler();
 const { setupApp } = await import('../src/app.setup.js');
 const { AuthController } =
   await import('../src/modules/auth/controller/index.js');
-const { EmailVerificationService, PasswordResetService, SessionService } =
-  await import('../src/modules/auth/services/index.js');
+const {
+  EmailChangeService,
+  EmailVerificationService,
+  PasswordResetService,
+  SessionService,
+} = await import('../src/modules/auth/services/index.js');
 const { IngredientController } =
   await import('../src/modules/ingredient/controller/index.js');
 const { IngredientService } =
@@ -77,6 +81,7 @@ describe('Malformed numeric input (e2e)', () => {
         { provide: SessionService, useValue: services.session },
         { provide: EmailVerificationService, useValue: {} },
         { provide: PasswordResetService, useValue: {} },
+        { provide: EmailChangeService, useValue: {} },
         // Stands in for the global JwtGuard
         {
           provide: APP_GUARD,

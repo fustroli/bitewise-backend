@@ -17,8 +17,12 @@ mockThrottler();
 const { setupApp } = await import('../src/app.setup.js');
 const { AuthController } =
   await import('../src/modules/auth/controller/index.js');
-const { EmailVerificationService, PasswordResetService, SessionService } =
-  await import('../src/modules/auth/services/index.js');
+const {
+  EmailChangeService,
+  EmailVerificationService,
+  PasswordResetService,
+  SessionService,
+} = await import('../src/modules/auth/services/index.js');
 const { GoogleAuthGuard } = await import('../src/modules/auth/guard/index.js');
 const { Session } = await import('../src/modules/auth/entities/index.js');
 const { stubUser, User } =
@@ -76,6 +80,11 @@ describe('Auth cookies (e2e)', () => {
     confirm: jest.fn(async () => undefined),
   };
 
+  const emailChange = {
+    confirm: jest.fn(async () => undefined),
+    cancel: jest.fn(async () => undefined),
+  };
+
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [PassportModule.register({})],
@@ -84,6 +93,7 @@ describe('Auth cookies (e2e)', () => {
         { provide: SessionService, useValue: sessions },
         { provide: EmailVerificationService, useValue: verification },
         { provide: PasswordResetService, useValue: passwordReset },
+        { provide: EmailChangeService, useValue: emailChange },
       ],
     })
       .overrideGuard(GoogleAuthGuard)
@@ -192,6 +202,31 @@ describe('Auth cookies (e2e)', () => {
     },
   );
 
+  it.each(['confirm', 'cancel'] as const)(
+    'POST /api/auth/email-change/%s redeems the token with 204 and starts no Session',
+    async (action) => {
+      const res = await request(app.getHttpServer())
+        .post(`/api/auth/email-change/${action}`)
+        .send({ token: 'link-token' })
+        .expect(HttpStatus.NO_CONTENT);
+
+      expect(emailChange[action]).toHaveBeenCalledWith('link-token');
+      expect(cookiesOf(res)).toHaveLength(0);
+    },
+  );
+
+  it.each(['confirm', 'cancel'] as const)(
+    'POST /api/auth/email-change/%s without a token is a 400',
+    async (action) => {
+      await request(app.getHttpServer())
+        .post(`/api/auth/email-change/${action}`)
+        .send({})
+        .expect(HttpStatus.BAD_REQUEST);
+
+      expect(emailChange[action]).not.toHaveBeenCalled();
+    },
+  );
+
   it('POST /api/auth/refresh rotates the Bearer refresh token and resets the cookies', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/auth/refresh')
@@ -278,6 +313,7 @@ describe('POST /api/auth/signout (e2e)', () => {
         SessionService,
         { provide: EmailVerificationService, useValue: {} },
         { provide: PasswordResetService, useValue: {} },
+        { provide: EmailChangeService, useValue: {} },
         { provide: MailService, useValue: {} },
         { provide: JwtService, useValue: jwt },
         { provide: getRepositoryToken(User), useValue: {} },

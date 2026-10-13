@@ -6,10 +6,11 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { IsNull, MoreThan, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../entities/index.js';
-import { Session } from '../../auth/entities/index.js';
+import { EmailVerificationToken, Session } from '../../auth/entities/index.js';
+import { ETokenPurpose } from '../../auth/enum/index.js';
 import { ProfilePatchDto } from '../dto/index.js';
 import { FileStore } from '../../storage/index.js';
 import {
@@ -18,6 +19,11 @@ import {
   avatarKey,
   encodeAvatar,
 } from '../avatar/index.js';
+
+export interface IPendingEmailChange {
+  email: string;
+  expiresAt: Date;
+}
 
 const GROUPS = [
   'personalInformation',
@@ -34,6 +40,8 @@ export class ProfileService {
   constructor(
     @InjectRepository(User)
     private readonly users: Repository<User>,
+    @InjectRepository(EmailVerificationToken)
+    private readonly tokens: Repository<EmailVerificationToken>,
     private readonly files: FileStore,
   ) {}
 
@@ -42,6 +50,24 @@ export class ProfileService {
     if (!user)
       throw new NotFoundException('No user found with the provided id.');
     return user;
+  }
+
+  /** The User's unconfirmed Email change, if any. */
+  async getPendingEmailChange(
+    userId: number,
+  ): Promise<IPendingEmailChange | null> {
+    const pending = await this.tokens.findOne({
+      where: {
+        user: { id: userId },
+        purpose: ETokenPurpose.EMAIL_CHANGE,
+        usedAt: IsNull(),
+        expiresAt: MoreThan(new Date()),
+      },
+      order: { id: 'DESC' },
+    });
+    return pending
+      ? { email: pending.newEmail, expiresAt: pending.expiresAt }
+      : null;
   }
 
   /** Username clashes surface as 409 through DuplicateEntryFilter. */

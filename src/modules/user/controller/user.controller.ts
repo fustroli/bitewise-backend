@@ -21,7 +21,8 @@ import {
 } from '../dto/index.js';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AVATAR_MAX_BYTES } from '../avatar/index.js';
-import { toUserResponse } from '../serializers/index.js';
+import { toUserResponse, TUserResponse } from '../serializers/index.js';
+import { User } from '../entities/index.js';
 
 @ApiTags('users')
 @Controller('users')
@@ -34,7 +35,7 @@ export class UserController {
   @Get('me')
   @ApiOkResponse({ type: UserResponseDto })
   getMe(@CurrentUser() { userId }: IAuthenticatedUser) {
-    return this.profiles.getProfile(userId).then(toUserResponse);
+    return this.profiles.getProfile(userId).then((u) => this.respond(u));
   }
 
   @Get('me/statistics')
@@ -49,7 +50,9 @@ export class UserController {
     @CurrentUser() { userId }: IAuthenticatedUser,
     @Body() patch: ProfilePatchDto,
   ) {
-    return this.profiles.updateProfile(userId, patch).then(toUserResponse);
+    return this.profiles
+      .updateProfile(userId, patch)
+      .then((u) => this.respond(u));
   }
 
   @Delete('me')
@@ -67,6 +70,15 @@ export class UserController {
     @UploadedFile() file: Express.Multer.File,
     @CurrentUser() { userId }: IAuthenticatedUser,
   ) {
-    return this.profiles.uploadAvatar(file, userId).then(toUserResponse);
+    return this.profiles
+      .uploadAvatar(file, userId)
+      .then((u) => this.respond(u));
+  }
+
+  private async respond(user: User): Promise<TUserResponse> {
+    return toUserResponse(
+      user,
+      await this.profiles.getPendingEmailChange(user.id),
+    );
   }
 }

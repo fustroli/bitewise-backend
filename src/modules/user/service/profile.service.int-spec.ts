@@ -12,7 +12,7 @@ import {
   createUser,
 } from '../../../../test/int/test-database.js';
 import { toConflict } from '../../../common/filters/index.js';
-import { Session } from '../../auth/entities/index.js';
+import { EmailVerificationToken, Session } from '../../auth/entities/index.js';
 import { InMemoryFileStore } from '../../storage/index.js';
 import { User } from '../entities/index.js';
 import { EActivityLevel, ESex } from '../enum/index.js';
@@ -69,7 +69,11 @@ describe('ProfileService', () => {
   beforeEach(async () => {
     user = await createUser(dataSource);
     files = new InMemoryFileStore();
-    profiles = new ProfileService(dataSource.getRepository(User), files);
+    profiles = new ProfileService(
+      dataSource.getRepository(User),
+      dataSource.getRepository(EmailVerificationToken),
+      files,
+    );
   });
 
   const upload = (owner: User, buffer: Buffer, mimetype = 'image/png') =>

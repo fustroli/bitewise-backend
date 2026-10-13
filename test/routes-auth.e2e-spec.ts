@@ -74,6 +74,8 @@ const PUBLIC_ROUTES = [
   'POST /api/auth/verify-email',
   'POST /api/auth/password-reset',
   'POST /api/auth/password-reset/confirm',
+  'POST /api/auth/email-change/confirm',
+  'POST /api/auth/email-change/cancel',
   'GET /api/auth/google/login',
   'GET /api/auth/google/callback',
   'GET /api/health',

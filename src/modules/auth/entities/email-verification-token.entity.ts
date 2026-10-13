@@ -39,6 +39,14 @@ export class EmailVerificationToken {
   @Column({ type: 'datetime', nullable: true })
   usedAt: Date | null;
 
+  // EMAIL_CHANGE only: the address being changed to
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  newEmail: string | null;
+
+  // EMAIL_CHANGE only: the requesting Session, kept when the change is confirmed
+  @Column({ type: 'char', length: 36, nullable: true })
+  sessionId: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 }

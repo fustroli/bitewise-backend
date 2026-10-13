@@ -14,6 +14,20 @@ export class UserResponseDto {
   @ApiProperty({ example: false })
   emailVerified: boolean;
 
+  @ApiProperty({
+    description: 'The unconfirmed new address of a pending Email change',
+    example: null,
+    nullable: true,
+  })
+  pendingEmail: string | null;
+
+  @ApiProperty({
+    description: 'When the pending Email change expires',
+    example: null,
+    nullable: true,
+  })
+  pendingEmailExpiresAt: Date | null;
+
   @ApiProperty({ type: () => PersonalInformationDto })
   personalInformation: PersonalInformationDto;
 
