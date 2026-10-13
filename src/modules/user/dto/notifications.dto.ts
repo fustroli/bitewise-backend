@@ -1,6 +1,7 @@
 import { IsBoolean, IsEmail, IsOptional, ValidateIf } from 'class-validator';
 
 import { ApiProperty } from '@nestjs/swagger';
+import { NormalizeEmail } from '../../../common/decorators/index.js';
 
 // Present but null fails validation
 const IfPresent = () => ValidateIf((_object, value) => value !== undefined);
@@ -15,6 +16,7 @@ export class NotificationSettingsDto {
   })
   @IsOptional()
   @IsEmail()
+  @NormalizeEmail()
   defaultEmailAddress?: string | null;
 
   // The flags can't be cleared, only set

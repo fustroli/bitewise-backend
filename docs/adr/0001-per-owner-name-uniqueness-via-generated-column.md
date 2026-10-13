@@ -12,6 +12,6 @@ Owned resources (Ingredient, Meal, Meal plan) must have unique names among their
 - **Unique index on `(user_id, name, deleteTimeStamp)`**: active rows all have NULL `deleteTimeStamp`, and NULLs are distinct, so active duplicates slip through.
 - **App-level check-then-insert** (the previous approach): races under concurrent writes and must be repeated on every write path. Remains the fallback if TypeORM's schema diff can't keep the generated column stable (it has a history of re-diffing generated columns, which would produce spurious migrations); the schema-drift integration test guards this (ADR-0002).
 
-The same pattern enforces User sign-in email uniqueness (`activeEmail`), so a deleted account's email can sign up again.
+The same pattern enforces User sign-in email uniqueness (`activeEmail`), so a deleted account's email can sign up again. Comparison uses MySQL's default collation (`utf8mb4_0900_ai_ci`), so it is case- and accent-insensitive: `josé@x.com` and `jose@x.com` collide. Accepted: emails are stored lowercased (#101), and accent-only variants of one address are not a real use case. The same applies to names.
 
 See fustroli/bitewise-backend#18.

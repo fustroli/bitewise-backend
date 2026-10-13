@@ -8,13 +8,13 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { Match } from '../decorators/index.js';
 import { PASSWORD_MIN_LENGTH } from '../constants/index.js';
-import { Transform } from 'class-transformer';
+import { NormalizeEmail } from '../../../common/decorators/index.js';
 
 export class CreateUserDto {
   @IsEmail()
   @IsNotEmpty()
   @ApiProperty({ example: 'email@bitewise.com', required: true })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @NormalizeEmail()
   readonly email: string;
 
   @IsString()

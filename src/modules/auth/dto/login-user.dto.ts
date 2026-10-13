@@ -1,12 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { NormalizeEmail } from '../../../common/decorators/index.js';
 import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 
 export class LoginUserDto {
   @IsEmail()
   @IsNotEmpty()
   @ApiProperty({ example: 'email@bitewise.com', required: true })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @NormalizeEmail()
   readonly email: string;
 
   @IsString()

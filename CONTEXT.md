@@ -7,7 +7,7 @@ Meal and ingredient tracking: users build Ingredients, compose them into Meals, 
 ### Identity
 
 **User**:
-A person with a BiteWise account, identified by their sign-in email, which is unique among non-deleted Users. Deleting the account erases their Profile; the email may then sign up again as a new User.
+A person with a BiteWise account, identified by their sign-in email, which is unique among non-deleted Users. Emails are stored lowercased; uniqueness ignores case and accents (`José@x.com` and `jose@x.com` are the same email). Deleting the account erases their Profile; the email may then sign up again as a new User.
 _Avoid_: Account (for the person), member
 
 **Profile**:
