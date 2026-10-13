@@ -47,6 +47,15 @@ Avatar bucket + CloudFront: see `avatar-storage.md`.
 
 - [x] `TRUST_PROXY_HOPS=2` (CloudFront + nginx)
 - [x] Other values: see `.env.example`
+- [x] Auth URLs/cookies (single domain: nginx serves FE `/` and BE `/api/` on the same host):
+  - `FRONTEND_URL=https://bitewise.rolandfuest.com` (OAuth post-login redirect + CORS origin)
+  - `GOOGLE_CALLBACK_URL=https://bitewise.rolandfuest.com/api/auth/google/callback`, same URI in the Google console
+  - `COOKIE_DOMAIN`: leave **empty** on BE and FE (host-only cookie). The BE sets the session
+    cookies and the Next server reads them on the same host, so no `Domain` attribute is needed.
+    Only set it (e.g. `.rolandfuest.com`) if the FE and API ever move to different subdomains;
+    otherwise the FE never sees the cookies.
+  - Session cookies are `SameSite=Lax` (not Strict): Strict cookies are withheld on the landing
+    request after the Google redirect chain, so `/dashboard` would bounce back to `/`
 
 ## 7. Certificate + CloudFront
 

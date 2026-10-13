@@ -99,7 +99,7 @@ describe('Auth cookies (e2e)', () => {
       expect(set).toContain(`${name}=${value};`);
       expect(set).toMatch(/Max-Age=\d+/);
       expect(set).toContain('HttpOnly');
-      expect(set).toContain('SameSite=Strict');
+      expect(set).toContain('SameSite=Lax');
       expect(set).toContain('Path=/');
     }
     expect(res.body.email).toBe('test@mail.com');

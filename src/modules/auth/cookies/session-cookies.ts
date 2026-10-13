@@ -7,10 +7,12 @@ import parse from 'parse-duration';
 const ACCESS_TOKEN = 'accessToken';
 const REFRESH_TOKEN = 'refreshToken';
 
+// Lax, not strict: after the Google OAuth redirect chain the browser withholds strict cookies
+// from the landing request on the frontend, so the proxy sees no token
 function options(): CookieOptions {
   return {
     secure: config.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',
     httpOnly: true,
     path: '/',
     ...(config.COOKIE_DOMAIN ? { domain: config.COOKIE_DOMAIN } : {}),
