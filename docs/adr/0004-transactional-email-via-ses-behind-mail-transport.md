@@ -23,6 +23,7 @@ Email verification tokens are random 32-byte values; only their SHA-256 is store
 - `MAIL_TRANSPORT` and `MAIL_FROM` are required at boot; `AWS_REGION` with `ses`, `SMTP_HOST`/`SMTP_PORT` with `smtp`.
 - AWS setup is manual, per `docs/infra/email-sending.md`.
 - SES needs the sending domain verified (DKIM, SPF) and production access (leaving the sandbox) before it can mail arbitrary addresses; the instance role needs `ses:SendEmail`.
-- Bounces and complaints are not handled yet (fustroli/bitewise-backend#88).
+- Bounces and complaints are left to SES's account-level suppression list, with CloudWatch
+  alarms on the reputation rates; no app-side handling (fustroli/bitewise-backend#88).
 
 See fustroli/bitewise-backend#4.

@@ -29,16 +29,14 @@ Add to the EC2 instance role (inline policy):
     {
       "Effect": "Allow",
       "Action": "ses:SendEmail",
-      "Resource": [
-        "arn:aws:ses:<region>:<account-id>:identity/rolandfuest.com",
-        "arn:aws:ses:<region>:<account-id>:identity/<your-inbox>"
-      ]
+      "Resource": ["arn:aws:ses:<region>:<account-id>:identity/*"]
     }
   ]
 }
 ```
 
-While in the sandbox, SES also checks the recipient identity, hence the second ARN.
+`identity/*`: in the sandbox SES also checks the recipient identity; it only covers identities
+verified in this account.
 
 ## 4. Backend `.env` (prod)
 
@@ -57,8 +55,32 @@ Sign up on prod with the verified inbox; the email arrives, the link verifies, a
 `GET /api/users/me` shows `emailVerified: true`. A failed send is logged as
 `Failed to send "Verify your BiteWise email"` (pm2 logs) and never fails sign-up.
 
-## 6. Production access
+## 6. Bounces and complaints
 
-SES > Account dashboard > Request production access (transactional, expected volume, how
-bounces are handled: not yet, fustroli/bitewise-backend#88). Until approved, sign-ups with
-unverified addresses get no email.
+No app-side handling (fustroli/bitewise-backend#88 closed): SES does it.
+
+1. SES > Configuration > Suppression list: account-level suppression **enabled for bounces and
+   complaints** (default for accounts that started on SES after 2019-11-25). SES then never
+   sends to an address that hard-bounced or complained.
+2. SNS > Topics > Create topic: Standard, `bitewise-ses-alerts`. Create subscription: Email,
+   your inbox; confirm it from the email.
+3. CloudWatch > Alarms > Create alarm (us-east-1): Metrics, Classic, Select metric > SES
+   (account-level, no dimensions):
+
+   | Alarm                | Metric                     | Threshold  |
+   | -------------------- | -------------------------- | ---------- |
+   | `ses-bounce-rate`    | `Reputation.BounceRate`    | >= `0.04`  |
+   | `ses-complaint-rate` | `Reputation.ComplaintRate` | >= `0.001` |
+
+   Statistic Maximum, period 1 hour, missing data **ignore**; In alarm > SNS `bitewise-ses-alerts`.
+
+AWS reviews an account at a 5% bounce / 0.1% complaint rate and may pause sending at 10% /
+0.5%. At low volume one bounce (a mistyped sign-up) can fire the bounce alarm: check the
+suppression list for the address.
+
+## 7. Production access
+
+SES > Account dashboard > Request production access: Transactional, website URL, English.
+The acknowledgement (a bounce/complaint process) is covered by section 6. Until approved,
+sign-ups with unverified addresses get no email; afterwards the sandbox test identity can be
+deleted (the IAM policy needs no change).
