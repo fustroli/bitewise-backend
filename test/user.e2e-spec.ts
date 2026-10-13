@@ -24,6 +24,8 @@ const credentials = ['hash', 'googleId'];
 describe('User responses (e2e)', () => {
   let app: INestApplication;
 
+  let pending: { email: string; expiresAt: Date } | null = null;
+
   const user = () =>
     Object.assign(
       new User(),
@@ -41,6 +43,7 @@ describe('User responses (e2e)', () => {
           provide: ProfileService,
           useValue: {
             getProfile: async () => user(),
+            getPendingEmailChange: async () => pending,
             updateProfile: async () => user(),
             uploadAvatar: async () =>
               Object.assign(user(), { avatarKey: '1/avatar.webp' }),
@@ -103,6 +106,26 @@ describe('User responses (e2e)', () => {
     const res = await request(app.getHttpServer()).get('/api/users/me');
 
     expect(res.body.avatarUrl).toBeNull();
+  });
+
+  it('GET /api/users/me has null pending email fields without an Email change', async () => {
+    const res = await request(app.getHttpServer()).get('/api/users/me');
+
+    expect(res.body.pendingEmail).toBeNull();
+    expect(res.body.pendingEmailExpiresAt).toBeNull();
+  });
+
+  it('GET /api/users/me exposes a pending Email change', async () => {
+    const expiresAt = new Date('2030-01-01T00:00:00.000Z');
+    pending = { email: 'new@mail.com', expiresAt };
+    try {
+      const res = await request(app.getHttpServer()).get('/api/users/me');
+
+      expect(res.body.pendingEmail).toBe('new@mail.com');
+      expect(res.body.pendingEmailExpiresAt).toBe(expiresAt.toISOString());
+    } finally {
+      pending = null;
+    }
   });
 
   it.each([

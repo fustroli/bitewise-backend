@@ -5,6 +5,7 @@ import { AddSessionExpiresAtIndex1791740000000 } from './1791740000000-AddSessio
 import { RenameUserAvatarUrlToAvatarKey1791750000000 } from './1791750000000-RenameUserAvatarUrlToAvatarKey.js';
 import { AddEmailVerification1791903793794 } from './1791903793794-AddEmailVerification.js';
 import { LowercaseUserEmails1791990000000 } from './1791990000000-LowercaseUserEmails.js';
+import { AddEmailChange1792000000000 } from './1792000000000-AddEmailChange.js';
 
 // Every migration, in order. Listed explicitly rather than globbed: Jest's ESM
 // transform can't see glob-loaded files, and int tests run these migrations.
@@ -17,4 +18,5 @@ export const migrations = [
   RenameUserAvatarUrlToAvatarKey1791750000000,
   AddEmailVerification1791903793794,
   LowercaseUserEmails1791990000000,
+  AddEmailChange1792000000000,
 ];

@@ -13,6 +13,7 @@ import {
   SessionCleanupTask,
 } from './tasks/index.js';
 import {
+  EmailChangeService,
   EmailVerificationService,
   PasswordResetService,
   SessionService,
@@ -37,6 +38,7 @@ import googleOauthConfig from './config/google-oauth.config.js';
     EmailVerificationService,
     EmailVerificationCleanupTask,
     PasswordResetService,
+    EmailChangeService,
     JwtStrategy,
     GoogleStrategy,
     // Every route needs an access token unless marked @Public()

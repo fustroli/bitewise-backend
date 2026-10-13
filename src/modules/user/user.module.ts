@@ -7,10 +7,17 @@ import { UserController } from './controller/index.js';
 import { Ingredient } from '../ingredient/entities/index.js';
 import { Meal } from '../meal/entities/index.js';
 import { MealPlan } from '../meal-plan/entities/index.js';
+import { EmailVerificationToken } from '../auth/entities/index.js';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Ingredient, Meal, MealPlan]),
+    TypeOrmModule.forFeature([
+      User,
+      Ingredient,
+      Meal,
+      MealPlan,
+      EmailVerificationToken,
+    ]),
     StorageModule,
   ],
   controllers: [UserController],

@@ -2,6 +2,7 @@ import {
   Body,
   ConflictException,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -16,11 +17,14 @@ import {
   LoginUserDto,
   ChangePasswordDto,
   ConfirmPasswordResetDto,
+  EmailChangeTokenDto,
+  RequestEmailChangeDto,
   RequestPasswordResetDto,
   VerifyEmailDto,
 } from '../dto/index.js';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import {
+  EmailChangeService,
   EmailVerificationService,
   PasswordResetService,
   SessionService,
@@ -45,6 +49,7 @@ export class AuthController {
     private readonly sessions: SessionService,
     private readonly verification: EmailVerificationService,
     private readonly passwordReset: PasswordResetService,
+    private readonly emailChange: EmailChangeService,
   ) {}
 
   @Post('signup')
@@ -161,6 +166,47 @@ export class AuthController {
   @HttpCode(HttpStatus.NO_CONTENT)
   confirmPasswordReset(@Body() dto: ConfirmPasswordResetDto) {
     return this.passwordReset.confirm(dto.token, dto.password);
+  }
+
+  // Mails a confirm link to the new address and a cancel link to the old one
+  @Post('email-change')
+  @Throttle(CREDENTIAL_LIMIT)
+  @HttpCode(HttpStatus.ACCEPTED)
+  requestEmailChange(
+    @CurrentUser() user: IAuthenticatedUser,
+    @Body() dto: RequestEmailChangeDto,
+  ) {
+    return this.emailChange.request(
+      user.userId,
+      user.sessionId,
+      dto.newEmail,
+      dto.password,
+    );
+  }
+
+  // @Public: the token proves inbox control, the password ownership
+  @Post('email-change/confirm')
+  @Public()
+  @Throttle(CREDENTIAL_LIMIT)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  confirmEmailChange(@Body() dto: EmailChangeTokenDto) {
+    return this.emailChange.confirm(dto.token);
+  }
+
+  // @Public: opened from the old address's mail, likely signed out
+  @Post('email-change/cancel')
+  @Public()
+  @Throttle(CREDENTIAL_LIMIT)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  cancelEmailChange(@Body() dto: EmailChangeTokenDto) {
+    return this.emailChange.cancel(dto.token);
+  }
+
+  // In-app cancel: ends no Sessions
+  @Delete('email-change')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  discardEmailChange(@CurrentUser() user: IAuthenticatedUser) {
+    return this.emailChange.discard(user.userId);
   }
 
   // A browser navigation: a known refusal lands on the frontend, not a JSON page

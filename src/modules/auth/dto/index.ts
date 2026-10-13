@@ -6,3 +6,5 @@ export * from './change-password.dto.js';
 export * from './verify-email.dto.js';
 export * from './request-password-reset.dto.js';
 export * from './confirm-password-reset.dto.js';
+export * from './request-email-change.dto.js';
+export * from './email-change-token.dto.js';
