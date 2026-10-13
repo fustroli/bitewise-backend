@@ -1,4 +1,8 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import sharp from 'sharp';
 import { DataSource } from 'typeorm';
 import { createHash, randomUUID } from 'crypto';
@@ -354,6 +358,21 @@ describe('ProfileService', () => {
   });
 
   describe('uploadAvatar', () => {
+    const verify = (owner: User) =>
+      dataSource.getRepository(User).update(owner.id, { emailVerified: true });
+
+    beforeEach(() => verify(user));
+
+    it('403s for an unverified email, storing nothing', async () => {
+      const unverified = await createUser(dataSource);
+
+      await expect(upload(unverified, await png())).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(files.files.size).toBe(0);
+      expect((await reload(unverified.id)).avatarKey).toBeNull();
+    });
+
     it('stores a 512px WebP without EXIF under <userId>/<uuid>.webp', async () => {
       const saved = await upload(user, await png());
 
@@ -417,6 +436,7 @@ describe('ProfileService', () => {
       expect(files.files.has(avatarKey)).toBe(false);
 
       const other = await createUser(dataSource);
+      await verify(other);
       await upload(other, await png());
       files.failDelete = true;
       await expect(profiles.deleteAccount(other.id)).resolves.toBeUndefined();
