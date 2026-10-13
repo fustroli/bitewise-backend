@@ -15,9 +15,10 @@ import {
   CreateUserDto,
   LoginUserDto,
   ChangePasswordDto,
+  VerifyEmailDto,
 } from '../dto/index.js';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { SessionService } from '../services/index.js';
+import { EmailVerificationService, SessionService } from '../services/index.js';
 import { Throttle } from '@nestjs/throttler';
 import { Response } from 'express';
 import { GoogleAuthGuard } from '../guard/index.js';
@@ -28,11 +29,16 @@ import { clearSessionCookies, setSessionCookies } from '../cookies/index.js';
 
 // Credential endpoints: 10 requests per minute per IP
 const CREDENTIAL_LIMIT = { default: { limit: 10, ttl: 60_000 } };
+// Each one sends an email: 3 per 15 minutes per IP
+const RESEND_LIMIT = { default: { limit: 3, ttl: 900_000 } };
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly sessions: SessionService) {}
+  constructor(
+    private readonly sessions: SessionService,
+    private readonly verification: EmailVerificationService,
+  ) {}
 
   @Post('signup')
   @Public()
@@ -43,6 +49,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const { user, tokens } = await this.sessions.signUp(dto);
+    await this.verification.send(user);
     setSessionCookies(res, tokens);
     return user;
   }
@@ -113,6 +120,22 @@ export class AuthController {
     @Body() dto: ChangePasswordDto,
   ) {
     return this.sessions.changePassword(user.userId, user.sessionId, dto);
+  }
+
+  // @Public: the link may be opened signed out, or on another device
+  @Post('verify-email')
+  @Public()
+  @Throttle(CREDENTIAL_LIMIT)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.verification.verify(dto.token);
+  }
+
+  @Post('resend-verification')
+  @Throttle(RESEND_LIMIT)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  resendVerification(@CurrentUser() user: IAuthenticatedUser) {
+    return this.verification.resend(user.userId);
   }
 
   // A browser navigation: a known refusal lands on the frontend, not a JSON page

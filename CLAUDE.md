@@ -9,6 +9,7 @@ NestJS REST API backend for BiteWise, a meal/ingredient tracking platform.
 - **Auth**: per-device Sessions (`SessionService`); JWT access + refresh tokens carrying `sid`, issued as
   httpOnly cookies but accepted only as `Bearer`; Passport (email/password, Google OAuth)
 - **Storage**: S3 behind CloudFront (`@aws-sdk/client-s3`, `sharp` for re-encoding) — avatar uploads, via the `FileStore` port (ADR-0003)
+- **Mail**: Amazon SES (`@aws-sdk/client-sesv2`) behind the `MailTransport` port, fire-and-forget (ADR-0004)
 - **API Docs**: Swagger (`@nestjs/swagger`) at `/api/docs`; all routes use global prefix `/api`
 - **Health checks**: `@nestjs/terminus` (`GET /api/health` liveness, `GET /api/health/ready` readiness w/ DB check)
 - **Testing**: Jest (ESM mode: `ts-jest` with `useESM`, run via `--experimental-vm-modules`)
@@ -51,12 +52,15 @@ src/
   database/                    # dataSourceOptions (Nest + CLI), data-source.ts (CLI entry), migrations/
   modules/
     auth/                      # Session entity + SessionService (sign-up/in, refresh rotation, sign-out,
-                               #   change-password), cookie helper, JWT/Google strategies & guards
+                               #   change-password), EmailVerificationService (link tokens), cookie helper,
+                               #   JWT/Google strategies & guards
     user/                      # User entity (Profile groups embedded), ProfileService: /users/me + avatar
     ingredient/                # Ingredient CRUD, owned by a user
     meal/                      # Meal CRUD, composed of ingredients (MealIngredient join entity)
     meal-plan/                 # Meal plan CRUD, composed of meals (MealPlanMeal join entity)
     storage/                   # FileStore port + S3 and in-memory adapters (policy lives in user/avatar)
+    mail/                      # MailService over the MailTransport port: SES, SMTP (Mailpit), log adapters;
+                               #   templates are TS functions returning {subject, html, text}
     health/                    # Terminus health checks
   swagger/                     # Swagger setup (initializeSwagger)
   types/                       # Ambient type augmentations (Express.Request.user, multer types)

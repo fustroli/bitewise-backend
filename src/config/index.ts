@@ -59,7 +59,16 @@ export const config: IConfig = {
     BUCKET: process.env.S3_BUCKET,
     CDN_BASE_URL: process.env.S3_CDN_BASE_URL?.replace(/\/+$/, ''),
   },
+  MAIL: {
+    TRANSPORT: process.env.MAIL_TRANSPORT as TMailTransport,
+    FROM: process.env.MAIL_FROM,
+    AWS_REGION: process.env.AWS_REGION,
+    SMTP_HOST: process.env.SMTP_HOST,
+    SMTP_PORT: +process.env.SMTP_PORT,
+  },
 };
+
+export type TMailTransport = 'ses' | 'smtp' | 'log';
 
 export interface IConfig {
   PORT: number;
@@ -108,5 +117,16 @@ export interface IConfig {
     BUCKET: string;
     // CloudFront origin serving the bucket, no trailing slash
     CDN_BASE_URL: string;
+  };
+  MAIL: {
+    // ses in prod, smtp for a local catcher (Mailpit), log to send nothing
+    TRANSPORT: TMailTransport;
+    // Sender, optionally with a display name: "BiteWise <no-reply@example.com>"
+    FROM: string;
+    // SES region; only with TRANSPORT=ses
+    AWS_REGION?: string;
+    // Only with TRANSPORT=smtp
+    SMTP_HOST?: string;
+    SMTP_PORT?: number;
   };
 }

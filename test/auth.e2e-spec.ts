@@ -17,7 +17,7 @@ mockThrottler();
 const { setupApp } = await import('../src/app.setup.js');
 const { AuthController } =
   await import('../src/modules/auth/controller/index.js');
-const { SessionService } =
+const { EmailVerificationService, SessionService } =
   await import('../src/modules/auth/services/index.js');
 const { GoogleAuthGuard } = await import('../src/modules/auth/guard/index.js');
 const { Session } = await import('../src/modules/auth/entities/index.js');
@@ -59,16 +59,25 @@ describe('Auth cookies (e2e)', () => {
     Object.assign(new User(), stubUser({ hash: 'secret-hash' }));
 
   const sessions = {
+    signUp: jest.fn(async () => ({ user: user(), tokens })),
     signIn: jest.fn(async () => ({ user: user(), tokens })),
     rotate: jest.fn(async () => ({ user: user(), tokens })),
     signInSocial: jest.fn(async () => ({ user: user(), tokens })),
+  };
+
+  const verification = {
+    send: jest.fn(async () => undefined),
+    verify: jest.fn(async () => undefined),
   };
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [PassportModule.register({})],
       controllers: [AuthController],
-      providers: [{ provide: SessionService, useValue: sessions }],
+      providers: [
+        { provide: SessionService, useValue: sessions },
+        { provide: EmailVerificationService, useValue: verification },
+      ],
     })
       .overrideGuard(GoogleAuthGuard)
       .useValue(oauth)
@@ -104,6 +113,37 @@ describe('Auth cookies (e2e)', () => {
     }
     expect(res.body.email).toBe('test@mail.com');
     expect(res.body).not.toHaveProperty('hash');
+  });
+
+  it('POST /api/auth/signup mails the new User a verification link', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/auth/signup')
+      .send({ ...credentials, confirmPassword: credentials.password })
+      .expect(HttpStatus.CREATED);
+
+    expect(verification.send).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'test@mail.com' }),
+    );
+    expect(res.body.emailVerified).toBe(false);
+    expect(cookie(res, 'accessToken')).toContain('accessToken=access-jwt;');
+  });
+
+  it('POST /api/auth/verify-email redeems the token with 204', async () => {
+    await request(app.getHttpServer())
+      .post('/api/auth/verify-email')
+      .send({ token: 'link-token' })
+      .expect(HttpStatus.NO_CONTENT);
+
+    expect(verification.verify).toHaveBeenCalledWith('link-token');
+  });
+
+  it('POST /api/auth/verify-email without a token is a 400', async () => {
+    await request(app.getHttpServer())
+      .post('/api/auth/verify-email')
+      .send({})
+      .expect(HttpStatus.BAD_REQUEST);
+
+    expect(verification.verify).not.toHaveBeenCalled();
   });
 
   it('POST /api/auth/refresh rotates the Bearer refresh token and resets the cookies', async () => {
@@ -190,6 +230,7 @@ describe('POST /api/auth/signout (e2e)', () => {
       controllers: [AuthController],
       providers: [
         SessionService,
+        { provide: EmailVerificationService, useValue: {} },
         { provide: JwtService, useValue: jwt },
         { provide: getRepositoryToken(User), useValue: {} },
         { provide: getRepositoryToken(Session), useValue: sessionRepo },

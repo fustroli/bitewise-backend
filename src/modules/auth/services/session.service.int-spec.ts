@@ -57,6 +57,7 @@ describe('SessionService', () => {
 
       expect(user.id).toBeDefined();
       expect(user.hash).not.toBe(PASSWORD);
+      expect(user.emailVerified).toBe(false);
       await expect(authenticate(tokens)).resolves.toEqual({
         userId: user.id,
         sessionId: claimsOf(tokens.accessToken).sid,
@@ -340,8 +341,19 @@ describe('SessionService', () => {
       expect(again.user.id).toBe(user.id);
     });
 
-    it('links a verified email to the existing User', async () => {
-      const { user } = await signUp();
+    it('creates a verified User for a verified email', async () => {
+      const { user } = await sessions.signInSocial(
+        google(`${randomUUID()}@example.com`),
+      );
+
+      expect(user.emailVerified).toBe(true);
+    });
+
+    it('links a verified email to the existing verified User', async () => {
+      const { user, tokens } = await signUp();
+      await dataSource
+        .getRepository(User)
+        .update(user.id, { emailVerified: true });
 
       const linked = await sessions.signInSocial(google(user.email));
 
@@ -350,6 +362,24 @@ describe('SessionService', () => {
       await expect(
         sessions.signIn({ email: user.email, password: PASSWORD }),
       ).resolves.toBeDefined();
+      await expect(authenticate(tokens)).resolves.toBeDefined();
+    });
+
+    it('takes over an unverified User: drops the password and Sessions, verifies', async () => {
+      // A squatter signed up with the Google account owner's email
+      const { user, tokens } = await signUp();
+
+      const linked = await sessions.signInSocial(google(user.email));
+
+      expect(linked.user.id).toBe(user.id);
+      expect(
+        await dataSource.getRepository(User).findOneBy({ id: user.id }),
+      ).toMatchObject({ hash: null, emailVerified: true });
+      await expect(
+        sessions.signIn({ email: user.email, password: PASSWORD }),
+      ).rejects.toThrow(UnauthorizedException);
+      await expect(authenticate(tokens)).rejects.toThrow(UnauthorizedException);
+      await expect(authenticate(linked.tokens)).resolves.toBeDefined();
     });
 
     it('rejects an unverified email that belongs to another User with 409', async () => {
@@ -402,7 +432,7 @@ describe('SessionService', () => {
       });
 
       await expect(sessions.signInSocial(profile)).resolves.toMatchObject({
-        user: { email: profile.email },
+        user: { email: profile.email, emailVerified: false },
       });
     });
   });

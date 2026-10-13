@@ -4,6 +4,7 @@ import 'reflect-metadata';
 import { plainToInstance, Type } from 'class-transformer';
 import {
   IsIn,
+  IsEmail,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -13,6 +14,7 @@ import {
   Min,
   MinLength,
   registerDecorator,
+  ValidateIf,
   validateSync,
   ValidationError,
 } from 'class-validator';
@@ -152,6 +154,29 @@ class EnvironmentVariables {
 
   @IsUrl(url)
   S3_CDN_BASE_URL: string;
+
+  @IsIn(['ses', 'smtp', 'log'])
+  MAIL_TRANSPORT: string;
+
+  @IsEmail({ allow_display_name: true })
+  MAIL_FROM: string;
+
+  @ValidateIf((env) => env.MAIL_TRANSPORT === 'ses')
+  @IsString()
+  @IsNotEmpty()
+  AWS_REGION?: string;
+
+  @ValidateIf((env) => env.MAIL_TRANSPORT === 'smtp')
+  @IsString()
+  @IsNotEmpty()
+  SMTP_HOST?: string;
+
+  @ValidateIf((env) => env.MAIL_TRANSPORT === 'smtp')
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(MAX_PORT)
+  SMTP_PORT?: number;
 }
 
 /** One message per invalid key; empty when the env is valid. */

@@ -6,7 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { IsNull, LessThan, Not, Repository } from 'typeorm';
-import { createHash, randomUUID, timingSafeEqual } from 'crypto';
+import { randomUUID, timingSafeEqual } from 'crypto';
 
 import {
   ChangePasswordDto,
@@ -21,6 +21,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { Session } from '../entities/index.js';
+import { sha256 } from '../crypto/index.js';
 import type { StringValue } from 'ms';
 import { User } from '../../user/entities/index.js';
 import { config } from '../../../config/index.js';
@@ -91,6 +92,10 @@ export class SessionService {
    * Signs in with a provider identity. An unknown identity whose email
    * belongs to an existing User is linked to it only if the provider has
    * verified that email; otherwise a new User is created.
+   *
+   * Linking to a User whose email was never verified takes the account over:
+   * whoever signed up with the password didn't prove they own the email, so
+   * the password and every Session are dropped.
    */
   async signInSocial(profile: ISocialProfile): Promise<ISessionResult> {
     const { column, active } = PROVIDER_ID_COLUMNS[profile.provider];
@@ -101,11 +106,17 @@ export class SessionService {
       if (owner && !profile.emailVerified)
         throw new ConflictException('Sign in with your password first');
 
-      user = await this.users.save(
-        Object.assign(owner ?? this.users.create({ email: profile.email }), {
-          [column]: profile.providerId,
-        }),
-      );
+      const takeover = !!owner && !owner.emailVerified;
+      user = await this.users.manager.transaction(async (manager) => {
+        if (takeover) await manager.delete(Session, { user: { id: owner.id } });
+        return manager.save(
+          Object.assign(owner ?? this.users.create({ email: profile.email }), {
+            [column]: profile.providerId,
+            emailVerified: profile.emailVerified,
+            ...(takeover && { hash: null }),
+          }),
+        );
+      });
     }
 
     return { user, tokens: await this.start(user) };
@@ -276,10 +287,6 @@ export class SessionService {
 
     return { accessToken, refreshToken };
   }
-}
-
-function sha256(token: string): string {
-  return createHash('sha256').update(token).digest('hex');
 }
 
 function matches(refreshToken: string, session: Session): boolean {

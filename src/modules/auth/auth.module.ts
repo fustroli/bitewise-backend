@@ -7,24 +7,31 @@ import { JwtModule } from '@nestjs/jwt';
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { JwtGuard } from './guard/index.js';
-import { Session } from './entities/index.js';
-import { SessionCleanupTask } from './tasks/index.js';
-import { SessionService } from './services/index.js';
+import { EmailVerificationToken, Session } from './entities/index.js';
+import {
+  EmailVerificationCleanupTask,
+  SessionCleanupTask,
+} from './tasks/index.js';
+import { EmailVerificationService, SessionService } from './services/index.js';
+import { MailModule } from '../mail/index.js';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../user/entities/index.js';
 import googleOauthConfig from './config/google-oauth.config.js';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Session]),
+    TypeOrmModule.forFeature([User, Session, EmailVerificationToken]),
     PassportModule.register({}),
     JwtModule.register({}),
     ConfigModule.forFeature(googleOauthConfig),
+    MailModule,
   ],
   controllers: [AuthController],
   providers: [
     SessionService,
     SessionCleanupTask,
+    EmailVerificationService,
+    EmailVerificationCleanupTask,
     JwtStrategy,
     GoogleStrategy,
     // Every route needs an access token unless marked @Public()
