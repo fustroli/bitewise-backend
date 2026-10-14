@@ -38,4 +38,8 @@ export class MealIngredient {
     transformer: decimalTransformer,
   })
   quantity: number;
+
+  // 0-based place in the Meal's Meal ingredients, as last sent by the client
+  @Column({ default: 0 })
+  position: number;
 }

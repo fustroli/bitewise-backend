@@ -1,4 +1,5 @@
 import {
+  Column,
   Entity,
   Index,
   JoinColumn,
@@ -29,4 +30,8 @@ export class MealPlanMeal {
   @ManyToOne(() => Meal, (meal) => meal.mealPlanMeals)
   @JoinColumn({ name: 'mealId' })
   meal: Relation<Meal>;
+
+  // 0-based place in the Meal plan's Meals, as last sent by the client
+  @Column({ default: 0 })
+  position: number;
 }

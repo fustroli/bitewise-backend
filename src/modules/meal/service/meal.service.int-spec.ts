@@ -16,6 +16,7 @@ import { EUnit } from '../../ingredient/enum/index.js';
 import { User } from '../../user/entities/index.js';
 import { Meal, MealIngredient } from '../entities/index.js';
 import { MealPlan, MealPlanMeal } from '../../meal-plan/entities/index.js';
+import { serializeMeal } from '../serializers/index.js';
 import { MealService } from './meal.service.js';
 
 const MISSING_ID = 999_999;
@@ -319,6 +320,32 @@ describe('MealService', () => {
       );
       expect(kept).toMatchObject({ id: appleRow.id, quantity: NEW_QUANTITY });
       expect(ingredientIdsOf(updated)).toEqual([apple.id, pear.id].sort());
+    });
+
+    it('keeps the Meal ingredients in the order given, across reorders', async () => {
+      const pear = await createIngredient('Pear', owner);
+      const plum = await createIngredient('Plum', owner);
+      const orderOf = async () =>
+        serializeMeal(
+          await meals.getOne(meal.id, owner.id),
+        ).mealIngredients?.map((mi) => mi.ingredientId);
+      const update = (ids: number[]) =>
+        meals.updateOne(
+          meal.id,
+          {
+            mealIngredients: ids.map((ingredientId) => ({
+              ingredientId,
+              quantity: 1,
+            })),
+          },
+          owner.id,
+        );
+
+      await update([plum.id, apple.id, pear.id]);
+      expect(await orderOf()).toEqual([plum.id, apple.id, pear.id]);
+
+      await update([pear.id, plum.id, apple.id]);
+      expect(await orderOf()).toEqual([pear.id, plum.id, apple.id]);
     });
 
     it('leaves no orphan Meal ingredient rows', async () => {

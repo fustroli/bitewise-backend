@@ -94,8 +94,8 @@ export class MealPlanService {
 
   /**
    * The Meal plan's new set of Meals: distinct, owned Meals (any other id is
-   * a 404). Rows for Meals already in the plan are reused; rows left out are
-   * deleted on save (orphanedRowAction).
+   * a 404), positioned in the given order. Rows for Meals already in the plan
+   * are reused; rows left out are deleted on save (orphanedRowAction).
    */
   private async compose(
     manager: EntityManager,
@@ -114,10 +114,12 @@ export class MealPlanService {
     const existing = new Map(
       current.map((row) => [row.meal?.id, row] as const),
     );
-    return mealIds.map(
-      (mealId) =>
+    return mealIds.map((mealId, position) =>
+      Object.assign(
         existing.get(mealId) ??
-        manager.create(MealPlanMeal, { meal: { id: mealId } }),
+          manager.create(MealPlanMeal, { meal: { id: mealId } }),
+        { position },
+      ),
     );
   }
 }

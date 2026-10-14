@@ -316,6 +316,29 @@ describe('MealPlanService', () => {
       ).toBe(0);
     });
 
+    it('keeps the Meals in the order given, across reorders', async () => {
+      const salad = await createMeal('Salad', owner);
+      const soup = await createMeal('Soup', owner);
+      const orderOf = async () =>
+        serializeMealPlan(
+          await mealPlans.getOne(mealPlan.id, owner.id),
+        ).meals.map((meal) => meal.id);
+
+      await mealPlans.updateOne(
+        mealPlan.id,
+        { mealIds: [soup.id, oats.id, salad.id] },
+        owner.id,
+      );
+      expect(await orderOf()).toEqual([soup.id, oats.id, salad.id]);
+
+      await mealPlans.updateOne(
+        mealPlan.id,
+        { mealIds: [salad.id, soup.id, oats.id] },
+        owner.id,
+      );
+      expect(await orderOf()).toEqual([salad.id, soup.id, oats.id]);
+    });
+
     it('400s on a duplicate Meal and changes nothing', async () => {
       await expect(
         mealPlans.updateOne(
