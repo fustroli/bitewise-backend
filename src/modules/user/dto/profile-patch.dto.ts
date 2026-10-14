@@ -4,6 +4,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { BodyStatsDto } from './body-stats.dto.js';
 import { PersonalInformationDto } from './personal-information.dto.js';
 import { SocialProfilesDto } from './social-profiles.dto.js';
+import { TargetsDto } from './targets.dto.js';
 import { Type } from 'class-transformer';
 
 // A group may be missing (unchanged) but not null
@@ -31,4 +32,11 @@ export class ProfilePatchDto {
   @Type(() => BodyStatsDto)
   @ApiProperty({ type: BodyStatsDto, required: false })
   bodyStats?: BodyStatsDto;
+
+  @IfPresent()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => TargetsDto)
+  @ApiProperty({ type: TargetsDto, required: false })
+  targets?: TargetsDto;
 }

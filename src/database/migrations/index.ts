@@ -7,6 +7,7 @@ import { AddEmailVerification1791903793794 } from './1791903793794-AddEmailVerif
 import { LowercaseUserEmails1791990000000 } from './1791990000000-LowercaseUserEmails.js';
 import { AddEmailChange1792000000000 } from './1792000000000-AddEmailChange.js';
 import { DropUserNotificationSettings1792100000000 } from './1792100000000-DropUserNotificationSettings.js';
+import { AddUserTargets1792200000000 } from './1792200000000-AddUserTargets.js';
 
 // Every migration, in order. Listed explicitly rather than globbed: Jest's ESM
 // transform can't see glob-loaded files, and int tests run these migrations.
@@ -21,4 +22,5 @@ export const migrations = [
   LowercaseUserEmails1791990000000,
   AddEmailChange1792000000000,
   DropUserNotificationSettings1792100000000,
+  AddUserTargets1792200000000,
 ];

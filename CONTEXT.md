@@ -11,7 +11,7 @@ A person with a BiteWise account, identified by their sign-in email, which is un
 _Avoid_: Account (for the person), member
 
 **Profile**:
-What a User says about themselves: personal information, social profiles, avatar, and Body stats. Never includes sign-in credentials.
+What a User says about themselves: personal information, social profiles, avatar, Body stats, Calorie target and Macro plan. Never includes sign-in credentials.
 _Avoid_: Settings (for the whole page), user details
 
 **Email verification**:
@@ -66,3 +66,15 @@ _Avoid_: Body metrics, biometrics, health data
 **Activity level**:
 How physically active a User is day to day: one of six steps from Sedentary to Extra active.
 _Avoid_: Exercise level, lifestyle
+
+**Maintenance**:
+The daily calories that keep a User's weight steady, estimated from their Body stats. Never stored.
+_Avoid_: TDEE (in user-facing text), baseline
+
+**Calorie target**:
+The daily calorie goal a User picks relative to Maintenance: Maintenance itself, or losing or gaining 0.25, 0.5 or 1 kg per week. Only the choice is stored; the kcal value is computed by the frontend from Body stats. Unset means Maintenance.
+_Avoid_: Calorie goal, budget
+
+**Macro plan**:
+How a User's Calorie target is split into protein, fat and carbohydrates: balanced, low fat, low carb or high protein. Unset means balanced.
+_Avoid_: Macro split, diet
