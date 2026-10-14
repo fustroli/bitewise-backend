@@ -17,6 +17,7 @@ import { Meal } from '../../meal/entities/index.js';
 import { BodyStats } from './body-stats.embedded.js';
 import { PersonalInformation } from './personal-information.embedded.js';
 import { SocialProfiles } from './social-profiles.embedded.js';
+import { Targets } from './targets.embedded.js';
 import { ActiveColumn } from '../../../common/ownership/index.js';
 
 // DuplicateEntryFilter has a 409 message for each of these index names
@@ -57,6 +58,9 @@ export class User {
 
   @Column(() => BodyStats)
   bodyStats: BodyStats;
+
+  @Column(() => Targets)
+  targets: Targets;
 
   // bcrypt hash; null for a User who can only sign in with Google
   @Exclude()

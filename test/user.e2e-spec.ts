@@ -212,6 +212,51 @@ describe('User responses (e2e)', () => {
         .expect(HttpStatus.OK);
   });
 
+  it.each([
+    { targets: null },
+    { targets: { calorieTarget: 'cut' } },
+    { targets: { calorieTarget: 'MAINTENANCE' } },
+    { targets: { calorieTarget: 2500 } },
+    { targets: { macroPlan: 'keto' } },
+    { targets: { macroPlan: 'BALANCED' } },
+  ])('PATCH /api/users/me rejects Targets %o with 400', async (body) => {
+    await request(app.getHttpServer())
+      .patch('/api/users/me')
+      .send(body)
+      .expect(HttpStatus.BAD_REQUEST);
+  });
+
+  it('PATCH /api/users/me accepts every Target and null fields', async () => {
+    for (const targets of [
+      ...[
+        'maintenance',
+        'lose_mild',
+        'lose_normal',
+        'lose_fast',
+        'gain_mild',
+        'gain_normal',
+        'gain_fast',
+      ].map((calorieTarget) => ({ calorieTarget })),
+      ...['balanced', 'low_fat', 'low_carb', 'high_protein'].map(
+        (macroPlan) => ({ macroPlan }),
+      ),
+      {},
+      { calorieTarget: null, macroPlan: null },
+    ])
+      await request(app.getHttpServer())
+        .patch('/api/users/me')
+        .send({ targets })
+        .expect(HttpStatus.OK);
+  });
+
+  it('GET /api/users/me returns Targets', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/api/users/me')
+      .expect(HttpStatus.OK);
+
+    expect(res.body.targets).toEqual({ calorieTarget: null, macroPlan: null });
+  });
+
   it('GET /api/users/me returns Body stats', async () => {
     const res = await request(app.getHttpServer())
       .get('/api/users/me')

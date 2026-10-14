@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { BodyStatsDto } from './body-stats.dto.js';
 import { PersonalInformationDto } from './personal-information.dto.js';
 import { SocialProfilesDto } from './social-profiles.dto.js';
+import { TargetsDto } from './targets.dto.js';
 
 export class UserResponseDto {
   @ApiProperty({ example: 1 })
@@ -41,6 +42,9 @@ export class UserResponseDto {
 
   @ApiProperty({ type: () => BodyStatsDto })
   bodyStats: BodyStatsDto;
+
+  @ApiProperty({ type: () => TargetsDto })
+  targets: TargetsDto;
 
   @ApiProperty({
     example: 'https://cdn.example.com/1/6f1c2d3e.webp',

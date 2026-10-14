@@ -15,7 +15,12 @@ import { toConflict } from '../../../common/filters/index.js';
 import { EmailVerificationToken, Session } from '../../auth/entities/index.js';
 import { InMemoryFileStore } from '../../storage/index.js';
 import { User } from '../entities/index.js';
-import { EActivityLevel, ESex } from '../enum/index.js';
+import {
+  EActivityLevel,
+  ECalorieTarget,
+  EMacroPlan,
+  ESex,
+} from '../enum/index.js';
 import { ProfileService } from './profile.service.js';
 
 const uniqueUserName = () => `john_${randomUUID().split('-')[0]}`;
@@ -42,6 +47,7 @@ const EMPTY_BODY_STATS = {
   waistCm: null,
   hipCm: null,
 };
+const EMPTY_TARGETS = { calorieTarget: null, macroPlan: null };
 
 describe('ProfileService', () => {
   let dataSource: DataSource;
@@ -99,6 +105,7 @@ describe('ProfileService', () => {
       expect(profile.personalInformation).toEqual(EMPTY_PERSONAL_INFORMATION);
       expect(profile.socialProfiles).toEqual(EMPTY_SOCIAL_PROFILES);
       expect(profile.bodyStats).toEqual(EMPTY_BODY_STATS);
+      expect(profile.targets).toEqual(EMPTY_TARGETS);
     });
 
     it('404s for a deleted User', async () => {
@@ -159,6 +166,45 @@ describe('ProfileService', () => {
       });
 
       expect(profile.socialProfiles.twitter).toBe('https://twitter.com/jane');
+    });
+  });
+
+  describe('Targets', () => {
+    const TARGETS = {
+      calorieTarget: ECalorieTarget.LOSE_NORMAL,
+      macroPlan: EMacroPlan.HIGH_PROTEIN,
+    };
+
+    beforeEach(() => profiles.updateProfile(user.id, { targets: TARGETS }));
+
+    it('stores both fields', async () => {
+      const { targets } = await profiles.getProfile(user.id);
+
+      expect(targets).toEqual(TARGETS);
+    });
+
+    it('leaves a missing field unchanged', async () => {
+      await profiles.updateProfile(user.id, {
+        targets: { calorieTarget: ECalorieTarget.GAIN_FAST },
+      });
+      await profiles.updateProfile(user.id, {
+        targets: { macroPlan: EMacroPlan.LOW_CARB },
+      });
+
+      const { targets } = await profiles.getProfile(user.id);
+      expect(targets).toEqual({
+        calorieTarget: ECalorieTarget.GAIN_FAST,
+        macroPlan: EMacroPlan.LOW_CARB,
+      });
+    });
+
+    it('clears a field set to null', async () => {
+      await profiles.updateProfile(user.id, {
+        targets: { calorieTarget: null },
+      });
+
+      const { targets } = await profiles.getProfile(user.id);
+      expect(targets).toEqual({ ...TARGETS, calorieTarget: null });
     });
   });
 
@@ -287,6 +333,10 @@ describe('ProfileService', () => {
           weightKg: 80.5,
           neckCm: 38,
         },
+        targets: {
+          calorieTarget: ECalorieTarget.LOSE_FAST,
+          macroPlan: EMacroPlan.LOW_FAT,
+        },
       });
       await dataSource
         .getRepository(User)
@@ -300,6 +350,7 @@ describe('ProfileService', () => {
       expect(deleted.personalInformation).toEqual(EMPTY_PERSONAL_INFORMATION);
       expect(deleted.socialProfiles).toEqual(EMPTY_SOCIAL_PROFILES);
       expect(deleted.bodyStats).toEqual(EMPTY_BODY_STATS);
+      expect(deleted.targets).toEqual(EMPTY_TARGETS);
     });
 
     it("ends every one of the User's Sessions, and only theirs", async () => {

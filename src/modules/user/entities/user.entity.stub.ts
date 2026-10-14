@@ -30,6 +30,10 @@ export function stubUser(override: Partial<User> = {}): User {
       waistCm: null,
       hipCm: null,
     },
+    targets: {
+      calorieTarget: null,
+      macroPlan: null,
+    },
     avatarKey: null,
     googleId: null,
     createTimeStamp: new Date(),
