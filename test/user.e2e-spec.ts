@@ -148,10 +148,7 @@ describe('User responses (e2e)', () => {
   });
 
   it('PATCH /api/users/me rejects a null group and a null flag with 400', async () => {
-    for (const body of [
-      { personalInformation: null },
-      { notificationSettings: { marketingEmail: null } },
-    ])
+    for (const body of [{ personalInformation: null }])
       await request(app.getHttpServer())
         .patch('/api/users/me')
         .send(body)

@@ -15,7 +15,6 @@ import { Ingredient } from '../../ingredient/entities/index.js';
 import { IsEmail } from 'class-validator';
 import { Meal } from '../../meal/entities/index.js';
 import { BodyStats } from './body-stats.embedded.js';
-import { NotificationSettings } from './notification-settings.embedded.js';
 import { PersonalInformation } from './personal-information.embedded.js';
 import { SocialProfiles } from './social-profiles.embedded.js';
 import { ActiveColumn } from '../../../common/ownership/index.js';
@@ -58,9 +57,6 @@ export class User {
 
   @Column(() => BodyStats)
   bodyStats: BodyStats;
-
-  @Column(() => NotificationSettings)
-  notificationSettings: NotificationSettings;
 
   // bcrypt hash; null for a User who can only sign in with Google
   @Exclude()

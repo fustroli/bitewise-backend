@@ -30,12 +30,6 @@ export function stubUser(override: Partial<User> = {}): User {
       waistCm: null,
       hipCm: null,
     },
-    notificationSettings: {
-      defaultEmailAddress: null,
-      communicationEmail: false,
-      marketingEmail: false,
-      securityEmail: true,
-    },
     avatarKey: null,
     googleId: null,
     createTimeStamp: new Date(),

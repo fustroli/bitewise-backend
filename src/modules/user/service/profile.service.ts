@@ -25,12 +25,7 @@ export interface IPendingEmailChange {
   expiresAt: Date;
 }
 
-const GROUPS = [
-  'personalInformation',
-  'socialProfiles',
-  'bodyStats',
-  'notificationSettings',
-] as const;
+const GROUPS = ['personalInformation', 'socialProfiles', 'bodyStats'] as const;
 
 /** The authenticated User's Profile. Never reads or writes credentials. */
 @Injectable()
@@ -113,12 +108,6 @@ export class ProfileService {
           neckCm: null,
           waistCm: null,
           hipCm: null,
-        },
-        notificationSettings: {
-          defaultEmailAddress: null,
-          communicationEmail: false,
-          marketingEmail: false,
-          securityEmail: true,
         },
         avatarKey: null,
       });

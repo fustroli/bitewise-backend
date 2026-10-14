@@ -307,24 +307,6 @@ describe('EmailChangeService', () => {
       expect(await users.existsBy({ activeEmail: user.email })).toBe(false);
     });
 
-    it('keeps a NULL notification address following the sign-in email, and an explicit one', async () => {
-      const user = await createUserWithPassword();
-      const explicit = await createUserWithPassword();
-      await users.update(explicit.id, {
-        notificationSettings: { defaultEmailAddress: 'notify@example.com' },
-      });
-
-      await emailChange.confirm((await requestFor(user)).confirm);
-      await emailChange.confirm((await requestFor(explicit)).confirm);
-
-      expect(
-        (await reload(user)).notificationSettings.defaultEmailAddress,
-      ).toBeNull();
-      expect(
-        (await reload(explicit)).notificationSettings.defaultEmailAddress,
-      ).toBe('notify@example.com');
-    });
-
     it('is a 409 when the address was taken in the meantime, and changes nothing', async () => {
       const user = await createUserWithPassword();
       const { to, confirm } = await requestFor(user);

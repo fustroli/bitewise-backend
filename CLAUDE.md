@@ -77,7 +77,7 @@ barrel per directory. Import from the barrel (`../entities/index.js`), not indiv
 ## Entity relationships
 
 - `User` → has many `Ingredient`, `Meal`, `MealPlan`; `PersonalInformation`, `SocialProfiles`,
-  `BodyStats`, `NotificationSettings` are **embedded columns** on `user` (`@Column(() => X)`), not tables.
+  `BodyStats` are **embedded columns** on `user` (`@Column(() => X)`), not tables.
   Email unique among non-deleted Users (`activeEmail`, ADR-0001); `userName` unique (case-insensitive)
 - `Meal` → has many `MealIngredient` (join entity linking `Meal` + `Ingredient`, with
   `quantity`); has many `MealPlanMeal`

@@ -99,12 +99,6 @@ describe('ProfileService', () => {
       expect(profile.personalInformation).toEqual(EMPTY_PERSONAL_INFORMATION);
       expect(profile.socialProfiles).toEqual(EMPTY_SOCIAL_PROFILES);
       expect(profile.bodyStats).toEqual(EMPTY_BODY_STATS);
-      expect(profile.notificationSettings).toEqual({
-        defaultEmailAddress: null,
-        communicationEmail: false,
-        marketingEmail: false,
-        securityEmail: true,
-      });
     });
 
     it('404s for a deleted User', async () => {
@@ -121,7 +115,6 @@ describe('ProfileService', () => {
       profiles.updateProfile(user.id, {
         personalInformation: { firstName: 'John', lastName: 'Doe' },
         socialProfiles: { twitter: 'https://twitter.com/john' },
-        notificationSettings: { marketingEmail: true },
       }),
     );
 
@@ -132,7 +125,6 @@ describe('ProfileService', () => {
 
       const profile = await profiles.getProfile(user.id);
       expect(profile.socialProfiles.twitter).toBe('https://twitter.com/john');
-      expect(profile.notificationSettings.marketingEmail).toBe(true);
     });
 
     it('leaves a missing field unchanged', async () => {
@@ -163,13 +155,10 @@ describe('ProfileService', () => {
 
     it('returns the updated Profile', async () => {
       const profile = await profiles.updateProfile(user.id, {
-        notificationSettings: { defaultEmailAddress: 'news@example.com' },
+        socialProfiles: { twitter: 'https://twitter.com/jane' },
       });
 
-      expect(profile.notificationSettings).toMatchObject({
-        defaultEmailAddress: 'news@example.com',
-        marketingEmail: true,
-      });
+      expect(profile.socialProfiles.twitter).toBe('https://twitter.com/jane');
     });
   });
 
@@ -298,10 +287,6 @@ describe('ProfileService', () => {
           weightKg: 80.5,
           neckCm: 38,
         },
-        notificationSettings: {
-          defaultEmailAddress: 'john@example.com',
-          marketingEmail: true,
-        },
       });
       await dataSource
         .getRepository(User)
@@ -315,10 +300,6 @@ describe('ProfileService', () => {
       expect(deleted.personalInformation).toEqual(EMPTY_PERSONAL_INFORMATION);
       expect(deleted.socialProfiles).toEqual(EMPTY_SOCIAL_PROFILES);
       expect(deleted.bodyStats).toEqual(EMPTY_BODY_STATS);
-      expect(deleted.notificationSettings).toMatchObject({
-        defaultEmailAddress: null,
-        marketingEmail: false,
-      });
     });
 
     it("ends every one of the User's Sessions, and only theirs", async () => {

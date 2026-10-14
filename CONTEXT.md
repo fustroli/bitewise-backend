@@ -11,18 +11,15 @@ A person with a BiteWise account, identified by their sign-in email, which is un
 _Avoid_: Account (for the person), member
 
 **Profile**:
-What a User says about themselves: personal information, social profiles, avatar, Body stats, and Notification settings. Never includes sign-in credentials.
+What a User says about themselves: personal information, social profiles, avatar, and Body stats. Never includes sign-in credentials.
 _Avoid_: Settings (for the whole page), user details
-
-**Notification settings**:
-Which kinds of email a User receives, and the default email address they are sent to (the sign-in email unless changed).
 
 **Email verification**:
 Proof that a User controls their sign-in email: opening a single-use link mailed to it, valid for 24 hours, confirming an Email change, or signing in with Google when Google has verified that email. Requesting a new link invalidates earlier ones. Unverified Users can still sign in and use BiteWise, except uploading an avatar (it is publicly served). If a Google identity with a verified email is linked to an unverified User, that User's password and Sessions are dropped, since whoever set the password never proved they own the email.
 _Avoid_: Confirmation, activation
 
 **Email change**:
-Replacing a User's sign-in email. The User re-enters their password (so a Google-only User can't), and the new address must not be in use. A confirm link goes to the new address and a cancel link to the old one, both valid for 24 hours; asking again replaces the pending change. Confirming swaps the email, completes Email verification, ends every other Session, and drops links mailed to the old address. Cancelling from the old address assumes the password is compromised: it clears the password and ends every Session, so the User sets a new one by Password reset. Cancelling in the app only drops the pending change. A linked Google identity stays linked, and Notification settings that follow the sign-in email follow the new one.
+Replacing a User's sign-in email. The User re-enters their password (so a Google-only User can't), and the new address must not be in use. A confirm link goes to the new address and a cancel link to the old one, both valid for 24 hours; asking again replaces the pending change. Confirming swaps the email, completes Email verification, ends every other Session, and drops links mailed to the old address. Cancelling from the old address assumes the password is compromised: it clears the password and ends every Session, so the User sets a new one by Password reset. Cancelling in the app only drops the pending change. A linked Google identity stays linked.
 _Avoid_: Email update, re-verification
 
 **Password reset**:
