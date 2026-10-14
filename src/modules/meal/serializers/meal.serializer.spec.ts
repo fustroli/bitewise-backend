@@ -1,4 +1,4 @@
-import { stubMeal } from '../entities/index.js';
+import { stubMeal, stubMealIngredient } from '../entities/index.js';
 import { serializeMeal } from './meal.serializer.js';
 
 describe('serializeMeal', () => {
@@ -27,5 +27,19 @@ describe('serializeMeal', () => {
         },
       ],
     });
+  });
+
+  it('orders meal ingredients by position, then id', () => {
+    const meal = stubMeal();
+    const row = (id: number, position: number) => ({
+      ...stubMealIngredient(),
+      id,
+      position,
+    });
+    meal.mealIngredients = [row(1, 2), row(2, 0), row(4, 1), row(3, 1)];
+
+    expect(serializeMeal(meal).mealIngredients?.map((mi) => mi.id)).toEqual([
+      2, 3, 4, 1,
+    ]);
   });
 });

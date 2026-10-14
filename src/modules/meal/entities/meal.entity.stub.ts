@@ -23,5 +23,6 @@ export function stubMealIngredient(): MealIngredient {
     meal: { id: 1 } as Meal,
     ingredient: stubIngredient(),
     quantity: 5,
+    position: 0,
   };
 }

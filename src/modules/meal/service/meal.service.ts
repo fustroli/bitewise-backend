@@ -111,8 +111,9 @@ export class MealService {
 
   /**
    * The Meal's new set of Meal ingredients: distinct, owned Ingredients
-   * (any other id is a 404). Rows for Ingredients already in the Meal are
-   * reused; rows left out are deleted on save (orphanedRowAction).
+   * (any other id is a 404), positioned in the given order. Rows for
+   * Ingredients already in the Meal are reused; rows left out are deleted on
+   * save (orphanedRowAction).
    */
   private async compose(
     manager: EntityManager,
@@ -132,11 +133,11 @@ export class MealService {
     const existing = new Map(
       current.map((row) => [row.ingredient?.id, row] as const),
     );
-    return items.map(({ ingredientId, quantity }) =>
+    return items.map(({ ingredientId, quantity }, position) =>
       Object.assign(
         existing.get(ingredientId) ??
           manager.create(MealIngredient, { ingredient: { id: ingredientId } }),
-        { quantity },
+        { quantity, position },
       ),
     );
   }
