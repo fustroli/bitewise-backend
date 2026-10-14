@@ -115,6 +115,12 @@ describe('User responses (e2e)', () => {
     expect(res.body.pendingEmailExpiresAt).toBeNull();
   });
 
+  it('GET /api/users/me has hasPassword true for a User with a password', async () => {
+    const res = await request(app.getHttpServer()).get('/api/users/me');
+
+    expect(res.body.hasPassword).toBe(true);
+  });
+
   it('GET /api/users/me exposes a pending Email change', async () => {
     const expiresAt = new Date('2030-01-01T00:00:00.000Z');
     pending = { email: 'new@mail.com', expiresAt };

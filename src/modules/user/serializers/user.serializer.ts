@@ -4,6 +4,7 @@ import type { IPendingEmailChange } from '../service/index.js';
 
 export type TUserResponse = User & {
   avatarUrl: string | null;
+  hasPassword: boolean;
   pendingEmail: string | null;
   pendingEmailExpiresAt: Date | null;
 };
@@ -20,6 +21,7 @@ export function toUserResponse(
     avatarUrl: user.avatarKey
       ? `${config.S3.CDN_BASE_URL}/${user.avatarKey}`
       : null,
+    hasPassword: user.hash !== null,
     pendingEmail: pending?.email ?? null,
     pendingEmailExpiresAt: pending?.expiresAt ?? null,
   });

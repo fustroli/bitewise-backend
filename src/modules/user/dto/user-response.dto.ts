@@ -28,6 +28,12 @@ export class UserResponseDto {
   })
   pendingEmailExpiresAt: Date | null;
 
+  @ApiProperty({
+    description: 'False for a User who can only sign in with Google',
+    example: true,
+  })
+  hasPassword: boolean;
+
   @ApiProperty({ type: () => PersonalInformationDto })
   personalInformation: PersonalInformationDto;
 
