@@ -16,7 +16,10 @@ import { EUnit } from '../../ingredient/enum/index.js';
 import { Meal } from '../../meal/entities/index.js';
 import { User } from '../../user/entities/index.js';
 import { MealPlan, MealPlanMeal } from '../entities/index.js';
-import { serializeMealPlan } from '../serializers/index.js';
+import {
+  serializeMealPlan,
+  serializeMealPlanOption,
+} from '../serializers/index.js';
 import { MealPlanService } from './meal-plan.service.js';
 
 const MISSING_ID = 999_999;
@@ -238,6 +241,39 @@ describe('MealPlanService', () => {
       const matches = ['Bulk week', 'Weekend'];
       expect(page.count).toBe(matches.length);
       expect(page.data.map((mp) => mp.name)).toEqual(matches);
+    });
+  });
+
+  describe('getOptions', () => {
+    it("lists the Owner's Meal plans by name with their Meals in order", async () => {
+      const oats = await createMeal('Oats', owner);
+      const salad = await createMeal('Salad', owner);
+      await mealPlans.createOne(
+        { name: 'Tuesday', mealIds: [salad.id, oats.id] },
+        owner.id,
+      );
+      await mealPlans.createOne(
+        { name: 'Monday', mealIds: [oats.id] },
+        owner.id,
+      );
+      const theirOats = await createMeal('Oats', stranger);
+      await mealPlans.createOne(
+        { name: 'Sunday', mealIds: [theirOats.id] },
+        stranger.id,
+      );
+
+      const options = (await mealPlans.getOptions(owner.id)).map(
+        serializeMealPlanOption,
+      );
+
+      expect(options).toEqual([
+        { id: expect.any(Number), name: 'Monday', mealIds: [oats.id] },
+        {
+          id: expect.any(Number),
+          name: 'Tuesday',
+          mealIds: [salad.id, oats.id],
+        },
+      ]);
     });
   });
 

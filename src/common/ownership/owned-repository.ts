@@ -3,6 +3,7 @@ import {
   DeepPartial,
   FindOptionsOrder,
   FindOptionsRelations,
+  FindOptionsSelect,
   FindOptionsWhere,
   In,
   Like,
@@ -96,11 +97,36 @@ export class OwnedRepository<T extends IOwnedEntity> {
       relations: this.config.relations,
       relationLoadStrategy: this.config.relationLoadStrategy,
       order: this.order(pagination),
-      take: Math.min(pagination.limit ?? DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT),
-      skip: pagination.offset,
+      // `ids` asks for specific resources (at most MAX_IDS), so all of them come back
+      ...(pagination.ids
+        ? {}
+        : {
+            take: Math.min(
+              pagination.limit ?? DEFAULT_PAGE_LIMIT,
+              MAX_PAGE_LIMIT,
+            ),
+            skip: pagination.offset,
+          }),
     });
 
     return { data, count };
+  }
+
+  // Every non-deleted resource of the owner, by name, unpaginated; loads only `select`
+  listAllOwned(
+    ownerId: number,
+    select: FindOptionsSelect<T>,
+    relations?: FindOptionsRelations<T>,
+  ): Promise<T[]> {
+    return this.repository.find({
+      where: this.ownedWhere(ownerId),
+      select,
+      relations,
+      order: {
+        name: EOrderDirection.ASC,
+        id: EOrderDirection.ASC,
+      } as FindOptionsOrder<T>,
+    });
   }
 
   // COUNT of the owner's non-deleted resources; nothing is loaded

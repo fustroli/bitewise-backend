@@ -15,6 +15,7 @@ import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { IngredientService } from '../service/index.js';
 import {
   CreateIngredientDto,
+  IngredientOptionDto,
   IngredientResponseDto,
   UpdateIngredientDto,
   PaginatedIngredientDto,
@@ -25,12 +26,24 @@ import {
   mapPaginated,
   PaginationDto,
 } from '../../../common/pagination/index.js';
-import { serializeIngredient } from '../serializers/index.js';
+import {
+  serializeIngredient,
+  serializeIngredientOption,
+} from '../serializers/index.js';
 
 @ApiTags('ingredient')
 @Controller('ingredient')
 export class IngredientController {
   constructor(private readonly ingredientService: IngredientService) {}
+
+  @Get('options')
+  @ApiOkResponse({ type: [IngredientOptionDto] })
+  async getIngredientOptions(
+    @CurrentUser() user: IAuthenticatedUser,
+  ): Promise<IngredientOptionDto[]> {
+    const options = await this.ingredientService.getOptions(user.userId);
+    return options.map(serializeIngredientOption);
+  }
 
   @Get()
   @ApiOkResponse({ type: PaginatedIngredientDto })

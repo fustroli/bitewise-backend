@@ -47,6 +47,18 @@ export class MealPlanService {
     return this.mealPlans.listOwned(userId, paginationDto);
   }
 
+  getOptions(userId: number): Promise<MealPlan[]> {
+    return this.mealPlans.listAllOwned(
+      userId,
+      {
+        id: true,
+        name: true,
+        mealPlanMeals: { id: true, position: true, meal: { id: true } },
+      },
+      { mealPlanMeals: { meal: true } },
+    );
+  }
+
   createOne(data: CreateMealPlanDto, userId: number): Promise<MealPlan> {
     return this.repository.manager.transaction(async (manager) => {
       const { mealPlans, meals } = ownedIn(manager);

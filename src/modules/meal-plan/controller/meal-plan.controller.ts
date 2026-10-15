@@ -14,6 +14,7 @@ import {
 import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import {
   CreateMealPlanDto,
+  MealPlanOptionDto,
   MealPlanResponseDto,
   PaginatedMealPlanResponseDto,
   UpdateMealPlanDto,
@@ -21,7 +22,10 @@ import {
 import { MealPlanService } from '../service/index.js';
 import { CurrentUser } from '../../auth/decorators/index.js';
 import { IAuthenticatedUser } from '../../auth/interfaces/index.js';
-import { serializeMealPlan } from '../serializers/index.js';
+import {
+  serializeMealPlan,
+  serializeMealPlanOption,
+} from '../serializers/index.js';
 import {
   mapPaginated,
   PaginationDto,
@@ -31,6 +35,15 @@ import {
 @Controller('meal-plan')
 export class MealPlanController {
   constructor(private readonly mealPlanService: MealPlanService) {}
+
+  @Get('options')
+  @ApiOkResponse({ type: [MealPlanOptionDto] })
+  async getMealPlanOptions(
+    @CurrentUser() user: IAuthenticatedUser,
+  ): Promise<MealPlanOptionDto[]> {
+    const options = await this.mealPlanService.getOptions(user.userId);
+    return options.map(serializeMealPlanOption);
+  }
 
   @Get(':mealPlanId')
   @ApiOkResponse({ type: MealPlanResponseDto })

@@ -40,6 +40,14 @@ export class IngredientService {
     return this.ingredients.listOwned(userId, paginationDto);
   }
 
+  getOptions(userId: number): Promise<Ingredient[]> {
+    return this.ingredients.listAllOwned(userId, {
+      id: true,
+      name: true,
+      unit: true,
+    });
+  }
+
   createOne(data: CreateIngredientDto, userId: number): Promise<Ingredient> {
     return this.ingredients.createOwned(data, userId);
   }
