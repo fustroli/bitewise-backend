@@ -1,4 +1,8 @@
-import { MealIngredientResponseDto, MealResponseDto } from '../dto/index.js';
+import {
+  MealIngredientResponseDto,
+  MealOptionDto,
+  MealResponseDto,
+} from '../dto/index.js';
 import { Meal } from '../entities/meal.entity.js';
 import { MealIngredient } from '../entities/index.js';
 import { byPosition } from '../../../common/ordering/index.js';
@@ -11,6 +15,10 @@ export function serializeMeal(meal: Meal): MealResponseDto {
       ?.toSorted(byPosition)
       .map((mealIngredient) => serializeMealIngredient(mealIngredient)),
   };
+}
+
+export function serializeMealOption({ id, name }: Meal): MealOptionDto {
+  return { id, name };
 }
 
 export function serializeMealIngredient(

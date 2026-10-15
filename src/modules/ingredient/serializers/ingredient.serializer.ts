@@ -1,4 +1,4 @@
-import { IngredientResponseDto } from '../dto/index.js';
+import { IngredientOptionDto, IngredientResponseDto } from '../dto/index.js';
 import { Ingredient } from '../entities/index.js';
 
 export function serializeIngredient(
@@ -20,4 +20,12 @@ export function serializeIngredient(
     updateTimeStamp: ingredient.updateTimeStamp,
     deleteTimeStamp: ingredient.deleteTimeStamp,
   };
+}
+
+export function serializeIngredientOption({
+  id,
+  name,
+  unit,
+}: Ingredient): IngredientOptionDto {
+  return { id, name, unit };
 }

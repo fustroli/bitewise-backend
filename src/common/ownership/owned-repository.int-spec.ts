@@ -296,6 +296,77 @@ describe('OwnedRepository', () => {
       expect(page.count).toBe(1);
       expect(page.data.map((i) => i.id)).toEqual([mine.id]);
     });
+
+    it('returns every requested resource, ignoring limit and offset', async () => {
+      const ids: number[] = [];
+      for (const name of ['Apple', 'Pear', 'Plum']) {
+        ids.push(
+          (await ingredients.createOwned(ingredient(name), owner.id)).id,
+        );
+      }
+
+      const page = await ingredients.listOwned(owner.id, {
+        ids,
+        limit: 1,
+        offset: 1,
+      });
+
+      expect(page.data.map((i) => i.id).sort()).toEqual([...ids].sort());
+    });
+  });
+
+  describe('listAllOwned', () => {
+    it("returns all the Owner's resources by name, past the page cap", async () => {
+      const names = Array.from(
+        { length: MAX_PAGE_LIMIT + 1 },
+        (_, i) =>
+          `Item ${String(i).padStart(String(MAX_PAGE_LIMIT).length, '0')}`,
+      );
+      await repository.save(
+        names.map((name) => ({ ...ingredient(name), user: { id: owner.id } })),
+      );
+
+      const all = await ingredients.listAllOwned(owner.id, {
+        id: true,
+        name: true,
+      });
+
+      expect(all.map((i) => i.name)).toEqual(names);
+    });
+
+    it('sorts case-insensitively and leaves out deleted and foreign ones', async () => {
+      await ingredients.createOwned(ingredient('banana'), owner.id);
+      await ingredients.createOwned(ingredient('Apple'), owner.id);
+      const deleted = await ingredients.createOwned(
+        ingredient('Cherry'),
+        owner.id,
+      );
+      await ingredients.softDeleteOwned(deleted.id, owner.id);
+      await ingredients.createOwned(ingredient('Avocado'), stranger.id);
+
+      const all = await ingredients.listAllOwned(owner.id, {
+        id: true,
+        name: true,
+      });
+
+      expect(all.map((i) => i.name)).toEqual(['Apple', 'banana']);
+    });
+
+    it('loads only the selected columns', async () => {
+      await ingredients.createOwned(ingredient('Apple'), owner.id);
+
+      const [apple] = await ingredients.listAllOwned(owner.id, {
+        id: true,
+        name: true,
+        unit: true,
+      });
+
+      expect(apple).toEqual({
+        id: expect.any(Number),
+        name: 'Apple',
+        unit: EUnit.HUNDRED_GRAMS,
+      });
+    });
   });
 
   describe('softDeleteOwned', () => {

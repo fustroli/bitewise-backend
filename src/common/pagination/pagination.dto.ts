@@ -17,7 +17,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export const DEFAULT_PAGE_LIMIT = 20;
 export const MAX_PAGE_LIMIT = 100;
 export const MAX_SEARCH_LENGTH = 100;
-export const MAX_IDS = 3;
+export const MAX_IDS = MAX_PAGE_LIMIT;
 
 export class PaginationDto {
   @IsOptional()
@@ -84,7 +84,7 @@ export class PaginationDto {
     type: String,
     example: '1,2,3',
     required: false,
-    description: `Comma-separated ids, max ${MAX_IDS}; unknown or foreign ids are omitted`,
+    description: `Comma-separated ids, max ${MAX_IDS}; every match is returned (limit and offset are ignored), unknown or foreign ids are omitted`,
   })
   ids?: number[];
 }

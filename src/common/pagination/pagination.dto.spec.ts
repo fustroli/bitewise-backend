@@ -54,7 +54,8 @@ describe('PaginationDto', () => {
     });
 
     it(`rejects more than ${MAX_IDS} ids`, async () => {
-      const errors = await validate(toDto({ ids: '1,2,3,4' }));
+      const tooMany = Array.from({ length: MAX_IDS + 1 }, (_, i) => i + 1);
+      const errors = await validate(toDto({ ids: tooMany.join(',') }));
 
       expect(errors[0].property).toBe('ids');
     });
