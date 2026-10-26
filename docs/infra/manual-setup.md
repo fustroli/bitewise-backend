@@ -77,12 +77,12 @@ Avatar bucket + CloudFront: see `avatar-storage.md`.
 
 ## 9. Backups
 
-> **Resume here:** nothing pending. Section 11 (daytime schedule) deferred until dev phase is done.
+> **Resume here:** nothing pending.
 
 - [x] Separate backup bucket (not the avatar bucket: its policy lets CloudFront read `/*`),
       Block Public Access on, lifecycle: expire `backups/` after 14 days
 - [x] Nightly `mysqldump | gzip` to S3 `backups/` (`/usr/local/bin/bitewise-db-backup`,
-      `/etc/cron.d/bitewise-db-backup`, 03:30 UTC, runs as root via `auth_socket`)
+      `/etc/cron.d/bitewise-db-backup`, 17:30 UTC (inside up-hours, see 11), runs as root via `auth_socket`)
 - [x] Restore test into a scratch DB (a backup never restored isn't a backup):
   ```bash
   sudo mysql -e 'CREATE DATABASE restore_test'
@@ -101,16 +101,24 @@ Avatar bucket + CloudFront: see `avatar-storage.md`.
 
 Stopping the instance stops the compute charge only. EBS, snapshots and the Elastic IP still bill.
 
-- [ ] Elastic IP kept (an auto-assigned IP changes on start and breaks the CloudFront origin)
-- [ ] `pm2 save` done (with `pm2 startup`) so apps return after a start; nginx and MySQL return via systemd
-- [ ] Backup cron moved into up-hours (03:30 UTC would be skipped while stopped)
-- [ ] Start/stop: manual (`aws ec2 start-instances` / `stop-instances`) or EventBridge Scheduler, two schedules with a role allowing `ec2:StartInstances` / `ec2:StopInstances`
-- Start time: `<hh:mm>`; stop time: `<hh:mm>`; timezone: `<tz>`
+- [x] Elastic IP kept (an auto-assigned IP changes on start and breaks the CloudFront origin)
+- [x] `pm2 save` done (with `pm2 startup`) so apps return after a start; nginx and MySQL return via systemd.
+      Backend `scripts/start.sh` re-runs `pm2 save` on every deploy
+- [x] Backup cron moved into up-hours: 17:30 UTC = 18:30 CET / 19:30 CEST, inside the window on both
+      sides of DST (cron runs in UTC, the schedules in local time)
+- [x] Manual stop/start from the console: site and `/api/health` back ~1-2 min after start
+- [x] EventBridge Scheduler: role `bitewise-scheduler-role` (trust `scheduler.amazonaws.com`, inline
+      `ec2:StartInstances`/`ec2:StopInstances` on the instance ARN); schedules `bitewise-start`
+      (`cron(0 16 * * ? *)`) and `bitewise-stop` (`cron(0 21 * * ? *)`), universal target
+      `aws-sdk:ec2:startInstances`/`stopInstances`, payload `{"InstanceIds": ["<instance-id>"]}`
+- Start time: `16:00`; stop time: `21:00`; timezone: `Europe/Budapest` (Scheduler handles DST)
+- Volume uses the default `aws/ebs` key; a customer-managed key would need `kms:CreateGrant` on the
+  scheduler role or the start fails silently
 
 Expect:
 - Site returns 502/504 via CloudFront while stopped.
 - ~1-2 min after start before the site responds.
-- Pipeline deploys fail while stopped (CodeDeploy agent is down); deploy during up-hours or re-run after a start.
+- Pipeline deploys fail while stopped (CodeDeploy agent is down); deploy during up-hours (16:00-21:00 CET) or retry the Deploy stage after a start.
 
 ## 12. Pipeline (CodePipeline, backend + frontend)
 
