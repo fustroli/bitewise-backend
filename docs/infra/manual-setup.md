@@ -115,8 +115,20 @@ Stopping the instance stops the compute charge only. EBS, snapshots and the Elas
 - Volume uses the default `aws/ebs` key; a customer-managed key would need `kms:CreateGrant` on the
   scheduler role or the start fails silently
 
+Off-hours page (source: `infra/maintenance/index.html`, self-contained, no `/api` calls):
+
+- [ ] Private bucket for the page; upload the file at key `maintenance/index.html`
+      (`aws s3 cp infra/maintenance/index.html s3://<bucket>/maintenance/index.html`), re-upload after edits
+- [ ] Bucket added as a second origin on the distribution with OAC; bucket policy lets the distribution `s3:GetObject`
+- [ ] Cache behavior `/maintenance/*` to the S3 origin
+- [ ] Custom error responses for 502, 503, 504: page `/maintenance/index.html`, response code 503,
+      error caching TTL ~10s (the site shows again soon after the 16:00 start)
+- [ ] Origin connection timeout/attempts lowered (default 10s x 3 = ~30s wait before the page shows,
+      since a stopped instance's Elastic IP doesn't refuse connections, it just doesn't answer)
+- Error responses apply to `/api/*` too; fine, as the frontend is down at the same time
+
 Expect:
-- Site returns 502/504 via CloudFront while stopped.
+- Site returns 502/504 via CloudFront while stopped (the off-hours page once it is set up).
 - ~1-2 min after start before the site responds.
 - Pipeline deploys fail while stopped (CodeDeploy agent is down); deploy during up-hours (16:00-21:00 CET) or retry the Deploy stage after a start.
 

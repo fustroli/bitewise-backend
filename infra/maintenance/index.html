@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BiteWise - Open 16:00-21:00 Budapest time</title>
+  <meta name="description" content="BiteWise is a meal planner that helps you plan your meals and track your nutrition.">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%231e6a45'/%3E%3Cg transform='translate(7 7) scale(.75)' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z'/%3E%3Cpath d='M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12'/%3E%3C/g%3E%3C/svg%3E">
+  <!-- Off-hours page: CloudFront serves it from S3 as the 502/503/504 custom error response while the
+       EC2 is stopped (EventBridge Scheduler runs it 16:00-21:00 Europe/Budapest).
+       Self-contained on purpose: one object in the bucket, no fonts, images or /api calls.
+       Colors are the frontend's globals.css tokens. -->
+  <style>
+    :root {
+      --background: hsl(80 13% 95%);
+      --foreground: hsl(147 16% 11%);
+      --card: hsl(0 0% 100%);
+      --primary: hsl(152 56% 27%);
+      --primary-foreground: hsl(0 0% 100%);
+      --accent: hsl(142 28% 92%);
+      --accent-foreground: hsl(152 59% 22%);
+      --muted-foreground: hsl(142 6% 38%);
+      --border: hsl(90 11% 89%);
+      --carbs: hsl(37 75% 56%);
+      --radius: 0.875rem;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --background: hsl(150 12% 7%);
+        --foreground: hsl(90 12% 94%);
+        --card: hsl(150 10% 10%);
+        --primary: hsl(150 48% 52%);
+        --primary-foreground: hsl(150 40% 8%);
+        --accent: hsl(152 32% 18%);
+        --accent-foreground: hsl(145 45% 78%);
+        --muted-foreground: hsl(100 6% 68%);
+        --border: hsl(150 8% 15%);
+      }
+    }
+
+    * { box-sizing: border-box; margin: 0; }
+
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 24px 16px;
+      background:
+        radial-gradient(60rem 40rem at 85% -10%, var(--accent), transparent 60%),
+        radial-gradient(50rem 35rem at -10% 110%, var(--accent), transparent 60%),
+        var(--background);
+      color: var(--foreground);
+      font-family: Manrope, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    main {
+      width: 100%;
+      max-width: 30rem;
+      padding: 40px 32px;
+      text-align: center;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: calc(var(--radius) * 1.5);
+      box-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 12px 32px -12px rgb(0 0 0 / 0.12);
+    }
+
+    .brand {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 32px;
+    }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 11px;
+      background: var(--primary);
+      color: var(--primary-foreground);
+    }
+    .brand-name {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 12px;
+      margin-bottom: 16px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: var(--accent-foreground);
+      font-size: 0.8125rem;
+      font-weight: 600;
+    }
+    .status::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--carbs);
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+
+    h1 {
+      font-size: clamp(1.5rem, 5vw, 1.875rem);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+    p { color: var(--muted-foreground); }
+    footer {
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      font-size: 0.8125rem;
+      color: var(--muted-foreground);
+    }
+
+    @keyframes pulse {
+      50% { opacity: 0.35; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .status::before { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand" aria-label="BiteWise">
+      <span class="brand-mark" aria-hidden="true">
+        <!-- lucide "Leaf", same icon as the frontend's BrandLogo -->
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/>
+          <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>
+        </svg>
+      </span>
+      <span class="brand-name">BiteWise</span>
+    </div>
+
+    <div class="status">Closed right now</div>
+    <h1>Open daily from 16:00 to 21:00 Budapest time</h1>
+    <p>To keep hosting costs low, BiteWise only runs in the evening. Come back then and your meal planner will be waiting.</p>
+
+    <footer>BiteWise &middot; The Meal Planner</footer>
+  </main>
+</body>
+</html>
