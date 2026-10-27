@@ -117,18 +117,37 @@ Stopping the instance stops the compute charge only. EBS, snapshots and the Elas
 
 Off-hours page (source: `infra/maintenance/index.html`, self-contained, no `/api` calls):
 
-- [ ] Private bucket for the page; upload the file at key `maintenance/index.html`
-      (`aws s3 cp infra/maintenance/index.html s3://<bucket>/maintenance/index.html`), re-upload after edits
-- [ ] Bucket added as a second origin on the distribution with OAC; bucket policy lets the distribution `s3:GetObject`
-- [ ] Cache behavior `/maintenance/*` to the S3 origin
-- [ ] Custom error responses for 502, 503, 504: page `/maintenance/index.html`, response code 503,
-      error caching TTL ~10s (the site shows again soon after the 16:00 start)
-- [ ] Origin connection timeout/attempts lowered (default 10s x 3 = ~30s wait before the page shows,
+- [x] Hosted in the avatar bucket (not the backup bucket: no distribution may ever read DB dumps).
+      Upload at key `maintenance/index.html`
+      (`aws s3 cp infra/maintenance/index.html s3://<avatar-bucket>/maintenance/index.html`), re-upload after edits
+- [x] Avatar bucket added as a second origin (`maintenance-s3`) on the main distribution, with OAC
+- [x] Second statement in the avatar bucket policy, scoped to `maintenance/*` so avatars stay off the main
+      domain (keep the existing avatar-distribution statement as is):
+      ```json
+      {
+        "Sid": "AllowMainDistributionReadMaintenance",
+        "Effect": "Allow",
+        "Principal": { "Service": "cloudfront.amazonaws.com" },
+        "Action": "s3:GetObject",
+        "Resource": "arn:aws:s3:::<avatar-bucket>/maintenance/*",
+        "Condition": {
+          "StringEquals": {
+            "AWS:SourceArn": "arn:aws:cloudfront::<account-id>:distribution/<main-distribution-id>"
+          }
+        }
+      }
+      ```
+- [x] Cache behavior `/maintenance/*` to `maintenance-s3`; verify: `/maintenance/index.html` loads during up-hours
+- Side effects of sharing: the app role's `PutObject`/`DeleteObject` on `<avatar-bucket>/*` covers the page
+  too (avatar keys never use `maintenance/`), and the page is also reachable via the avatar CDN domain (harmless)
+- [x] Custom error responses for 502, 503, 504: page `/maintenance/index.html`, response code 503,
+      error caching TTL 10s (the site shows again soon after the 16:00 start)
+- [x] EC2 origin: connection timeout 3s, 1 attempt (default 10s x 3 = ~30s wait before the page shows,
       since a stopped instance's Elastic IP doesn't refuse connections, it just doesn't answer)
 - Error responses apply to `/api/*` too; fine, as the frontend is down at the same time
 
 Expect:
-- Site returns 502/504 via CloudFront while stopped (the off-hours page once it is set up).
+- Site shows the off-hours page (503) within a few seconds while stopped.
 - ~1-2 min after start before the site responds.
 - Pipeline deploys fail while stopped (CodeDeploy agent is down); deploy during up-hours (16:00-21:00 CET) or retry the Deploy stage after a start.
 
